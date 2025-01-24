@@ -207,7 +207,7 @@ import React, { useEffect, useState } from 'react';
                 <button
                   onClick={handleRegistration}
                   disabled={registering}
-                  className={`w-full md:w-auto px-6 py-2 rounded-md font-medium ${
+                  className={`w-full px-6 py-2 rounded-md font-medium flex justify-center ${
                     isRegistered
                       ? 'bg-red-600 hover:bg-red-700 text-white'
                       : 'bg-blue-600 hover:bg-blue-700 text-white'

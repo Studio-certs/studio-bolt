@@ -26,11 +26,18 @@ import React from 'react';
                   {user ? (
                     <>
                       <Link 
-                        to="/my-learning" 
+                        to="/my-learning"
                         className="text-gray-600 hover:text-gray-900 flex items-center"
                       >
                         <GraduationCap className="w-4 h-4 mr-1" />
                         My Learning
+                      </Link>
+                      <Link 
+                        to="/meetups"
+                        className="text-gray-600 hover:text-gray-900 flex items-center"
+                      >
+                        <Users className="w-4 h-4 mr-1" />
+                        Meetups
                       </Link>
                       <Link to="/profile" className="text-gray-600 hover:text-gray-900">Profile</Link>
                       {isAdmin && (
