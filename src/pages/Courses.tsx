@@ -11,6 +11,7 @@ interface Course {
   level: 'beginner' | 'intermediate' | 'advanced';
   thumbnail_url: string;
   category: string;
+  price: number;
   instructor: {
     full_name: string;
     avatar_url: string;
@@ -90,7 +91,7 @@ export default function Courses() {
                 </div>
                 <div className="flex items-center">
                   <BookOpen className="w-4 h-4 mr-1" />
-                  {course.level}
+                  {course.price === 0 ? 'Free' : `$${course.price}`}
                 </div>
               </div>
             </div>

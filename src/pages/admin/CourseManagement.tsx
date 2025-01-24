@@ -13,6 +13,7 @@ interface Course {
   level: string;
   category: string;
   thumbnail_url: string;
+  price: number;
   modules: Module[];
 }
 
@@ -34,6 +35,7 @@ export default function CourseManagement() {
   const [level, setLevel] = useState('beginner');
   const [category, setCategory] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
+  const [price, setPrice] = useState(0);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const { user } = useAuth();
 
@@ -76,7 +78,8 @@ export default function CourseManagement() {
       level,
       category,
       thumbnail_url: thumbnailUrl,
-      instructor_id: user?.id
+      instructor_id: user?.id,
+      price
     };
 
     try {
@@ -130,6 +133,7 @@ export default function CourseManagement() {
     setLevel(course.level);
     setCategory(course.category);
     setThumbnailUrl(course.thumbnail_url || '');
+    setPrice(course.price);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -141,6 +145,7 @@ export default function CourseManagement() {
     setLevel('beginner');
     setCategory('');
     setThumbnailUrl('');
+    setPrice(0);
   }
 
   return (
@@ -211,6 +216,18 @@ export default function CourseManagement() {
               type="text"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Price</label>
+            <input
+              type="number"
+              value={price}
+              onChange={(e) => setPrice(parseInt(e.target.value) || 0)}
+              min="0"
+              step="0.01"
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               required
             />
