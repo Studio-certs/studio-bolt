@@ -51,6 +51,7 @@
         const [loading, setLoading] = useState(true);
         const [enrolling, setEnrolling] = useState(false);
         const [moduleProgress, setModuleProgress] = useState<ModuleProgress[]>([]);
+        const [insufficientTokens, setInsufficientTokens] = useState(false);
 
         useEffect(() => {
           async function fetchCourse() {
@@ -123,17 +124,35 @@
           if (!user || !course) return;
 
           setEnrolling(true);
+          setInsufficientTokens(false);
           try {
             if (isEnrolled) {
-              const { error } = await supabase
-                .from('course_enrollments')
-                .delete()
-                .eq('course_id', course.id)
+              // Prevent unenrollment
+              alert('You cannot unenroll from a course once you have enrolled.');
+            } else {
+              // Check if user has enough tokens
+              const { data: walletData, error: walletError } = await supabase
+                .from('user_wallets')
+                .select('tokens')
+                .eq('user_id', user.id)
+                .maybeSingle();
+
+              if (walletError) throw walletError;
+
+              const userTokens = walletData?.tokens || 0;
+              if (userTokens < course.price) {
+                setInsufficientTokens(true);
+                return;
+              }
+
+              // Deduct tokens and enroll
+              const { error: updateError } = await supabase
+                .from('user_wallets')
+                .update({ tokens: userTokens - course.price })
                 .eq('user_id', user.id);
 
-              if (error) throw error;
-              setIsEnrolled(false);
-            } else {
+              if (updateError) throw updateError;
+
               const { error } = await supabase
                 .from('course_enrollments')
                 .insert({
@@ -232,21 +251,29 @@
                     </div>
 
                     {user && (
-                      <button
-                        onClick={handleEnrollment}
-                        disabled={enrolling}
-                        className={`w-full md:w-auto px-6 py-2 rounded-md font-medium ${
-                          isEnrolled
-                            ? 'bg-red-600 hover:bg-red-700 text-white'
-                            : 'bg-blue-600 hover:bg-blue-700 text-white'
-                        } disabled:opacity-50 transition-colors mb-8`}
-                      >
-                        {enrolling
-                          ? 'Processing...'
-                          : isEnrolled
-                          ? 'Unenroll from Course'
-                          : 'Enroll in Course'}
-                      </button>
+                      <>
+                        {insufficientTokens && (
+                          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                            <strong className="font-bold">Insufficient Tokens!</strong>
+                            <span className="block sm:inline"> You do not have enough tokens to enroll in this course. Please add tokens to your wallet or contact admin.</span>
+                          </div>
+                        )}
+                        <button
+                          onClick={handleEnrollment}
+                          disabled={enrolling || isEnrolled || insufficientTokens}
+                          className={`w-full md:w-auto px-6 py-2 rounded-md font-medium ${
+                            isEnrolled
+                              ? 'bg-gray-400 text-white cursor-not-allowed'
+                              : 'bg-blue-600 hover:bg-blue-700 text-white'
+                          } disabled:opacity-50 transition-colors mb-8`}
+                        >
+                          {enrolling
+                            ? 'Processing...'
+                            : isEnrolled
+                            ? 'Enrolled'
+                            : 'Enroll in Course'}
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>

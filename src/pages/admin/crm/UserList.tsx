@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+			import React, { useState } from 'react';
       import { Search, Filter, ChevronDown } from 'lucide-react';
       import type { User } from '../../../types/crm';
 
@@ -13,7 +13,7 @@ import React, { useState } from 'react';
         const [searchTerm, setSearchTerm] = useState('');
         const [filterRole, setFilterRole] = useState('all');
         const [filterProgress, setFilterProgress] = useState('all');
-        const [sortBy, setSortBy] = useState<'name' | 'courses' | 'progress' | 'date'>('name');
+        const [sortBy, setSortBy] = useState<'name' | 'courses' | 'progress' | 'date' | 'tokens'>('name');
         const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
         const filteredUsers = users
@@ -61,6 +61,11 @@ import React, { useState } from 'react';
               return sortOrder === 'asc'
                 ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
                 : new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+            }
+            if (sortBy === 'tokens') {
+              return sortOrder === 'asc'
+                ? (a.tokens || 0) - (b.tokens || 0)
+                : (b.tokens || 0) - (a.tokens || 0);
             }
             return 0;
           });
@@ -159,6 +164,16 @@ import React, { useState } from 'react';
                       <th
                         scope="col"
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                        onClick={() => handleSort('tokens')}
+                      >
+                        <div className="flex items-center">
+                          Tokens
+                          <ChevronDown className="w-4 h-4 ml-1" />
+                        </div>
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                         onClick={() => handleSort('date')}
                       >
                         <div className="flex items-center">
@@ -229,6 +244,9 @@ import React, { useState } from 'react';
                           ) : (
                             <span className="text-sm text-gray-500">No courses</span>
                           )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {user.tokens || 0}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {new Date(user.created_at).toLocaleDateString()}
