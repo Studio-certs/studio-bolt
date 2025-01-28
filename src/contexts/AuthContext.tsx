@@ -73,6 +73,27 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
           });
           console.log('Supabase signUp response:', response);
           if (response.error) throw response.error;
+
+          // Create user wallet
+          try {
+            const { data: walletData, error: walletError } = await supabase
+              .from('user_wallets')
+              .insert({
+                user_id: response.data.user.id,
+                tokens: 0
+              })
+              .select('tokens')
+              .maybeSingle();
+
+            if (walletError) {
+              console.error('Error creating user wallet:', walletError);
+              throw new Error('Failed to create user wallet');
+            }
+            console.log('User wallet created:', walletData);
+          } catch (walletError: any) {
+            console.error('Error creating user wallet:', walletError);
+            throw new Error('Failed to create user wallet');
+          }
         } catch (error: any) {
           console.error('Error during sign up:', error);
           throw new Error(error.message || 'Failed to create an account');
