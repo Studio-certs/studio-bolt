@@ -18,8 +18,8 @@ import React, { useState } from 'react';
           setLoading(true);
           await signUp(email, password, fullName);
           navigate('/');
-        } catch (err) {
-          setError('Failed to create an account');
+        } catch (err: any) {
+          setError(err.message || 'Failed to create an account');
           console.error(err);
         } finally {
           setLoading(false);

@@ -1,4 +1,4 @@
-			import React, { useState } from 'react';
+import React, { useState } from 'react';
       import { format, isValid } from 'date-fns';
       import { MapPin, Globe, Linkedin, Github, Twitter, BookOpen, Clock, Award, Plus, Wallet, Check } from 'lucide-react';
       import { supabase } from '../../../lib/supabase';
