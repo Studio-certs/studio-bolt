@@ -1,129 +1,150 @@
 import React, { useEffect, useState } from 'react';
-      import { Link } from 'react-router-dom';
-      import { useAuth } from '../contexts/AuthContext';
-      import { supabase } from '../lib/supabase';
-      import { BookOpen, Clock, Award, MapPin, Globe, Linkedin, Github, Twitter, Edit2, X, Check, Camera, Wallet } from 'lucide-react';
-      import { format } from 'date-fns';
-      import ImageUpload from '../components/ImageUpload';
+    import { Link } from 'react-router-dom';
+    import { useAuth } from '../contexts/AuthContext';
+    import { supabase } from '../lib/supabase';
+    import { BookOpen, Clock, Award, MapPin, Globe, Linkedin, Github, Twitter, Edit2, X, Check, Camera, Wallet } from 'lucide-react';
+    import { format, isValid } from 'date-fns';
+    import ImageUpload from '../components/ImageUpload';
 
-      interface UserProfile {
-        full_name: string;
-        avatar_url: string;
-        role: string;
-        headline: string;
-        bio: string;
-        location: string;
-        website: string;
-        linkedin_url: string;
-        github_url: string;
-        twitter_url: string;
-        badges?: {
-          badge: {
-            id: string;
-            name: string;
-            description: string;
-            image_url: string;
-          };
-          awarded_at: string;
-        }[];
-        tokens?: number;
-      }
-
-      interface EnrolledCourse {
-        course: {
+    interface UserProfile {
+      id: string;
+      full_name: string;
+      avatar_url: string;
+      role: string;
+      headline: string;
+      bio: string;
+      location: string;
+      website: string;
+      linkedin_url: string;
+      github_url: string;
+      twitter_url: string;
+      badges?: {
+        badge: {
           id: string;
-          title: string;
+          name: string;
           description: string;
-          duration: number;
-          level: 'beginner' | 'intermediate' | 'advanced';
-          thumbnail_url: string;
-          category: string;
+          image_url: string;
         };
-        progress: number;
-        enrolled_at: string;
-      }
+        awarded_at: string;
+      }[];
+      tokens?: number;
+    }
 
-      export default function Profile() {
-        const { user } = useAuth();
-        const [profile, setProfile] = useState<UserProfile | null>(null);
-        const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
-        const [loading, setLoading] = useState(true);
-        const [editing, setEditing] = useState(false);
-        const [editedProfile, setEditedProfile] = useState<UserProfile | null>(null);
-        const [saving, setSaving] = useState(false);
+    interface EnrolledCourse {
+      course: {
+        id: string;
+        title: string;
+        description: string;
+        duration: number;
+        level: 'beginner' | 'intermediate' | 'advanced';
+        thumbnail_url: string;
+        category: string;
+      };
+      progress: number;
+      enrolled_at: string;
+    }
 
-        useEffect(() => {
-          async function fetchProfileAndCourses() {
-            if (!user) return;
+    export default function Profile() {
+      const { user } = useAuth();
+      const [profile, setProfile] = useState<UserProfile | null>(null);
+      const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
+      const [loading, setLoading] = useState(true);
+      const [editing, setEditing] = useState(false);
+      const [editedProfile, setEditedProfile] = useState<UserProfile | null>(null);
+      const [saving, setSaving] = useState(false);
+      const [badges, setBadges] = useState<any[]>([]);
+      const [tokens, setTokens] = useState<number>(0);
 
-            try {
-              // Fetch profile with badges and tokens
-              const { data: profileData, error: profileError } = await supabase
-                .from('profiles')
-                .select(`
-                  *,
-                  badges:user_badges(
-                    awarded_at,
-                    badge:badge_id(
-                      id,
-                      name,
-                      description,
-                      image_url
-                    )
-                  ),
-                  wallet:user_wallets(
-                    tokens
-                  )
-                `)
-                .eq('id', user.id)
-                .single();
+      useEffect(() => {
+        async function fetchProfileAndCourses() {
+          if (!user) return;
 
-              if (profileError) {
-                console.error('Error fetching profile:', profileError);
-              } else {
-                setProfile({
-                  ...profileData,
-                  tokens: profileData.wallet?.tokens || 0
-                });
-                setEditedProfile({
-                  ...profileData,
-                  tokens: profileData.wallet?.tokens || 0
-                });
-              }
+          try {
+            // Fetch profile
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select(`
+                *
+              `)
+              .eq('id', user.id)
+              .single();
 
-              // Fetch enrolled courses
-              const { data: coursesData, error: coursesError } = await supabase
-                .from('course_enrollments')
-                .select(`
-                  progress,
-                  enrolled_at,
-                  course:course_id (
-                    id,
-                    title,
-                    description,
-                    duration,
-                    level,
-                    thumbnail_url,
-                    category
-                  )
-                `)
-                .eq('user_id', user.id)
-                .order('enrolled_at', { ascending: false });
-
-              if (coursesError) {
-                console.error('Error fetching enrolled courses:', coursesError);
-              } else {
-                setEnrolledCourses(coursesData || []);
-              }
-            } catch (error) {
-              console.error('Error:', error);
-            } finally {
-              setLoading(false);
+            if (profileError) {
+              console.error('Error fetching profile:', profileError);
+            } else {
+              setProfile(profileData);
+              setEditedProfile(profileData);
             }
-          }
 
-          fetchProfileAndCourses();
-        }, [user]);
+            // Fetch enrolled courses
+            const { data: coursesData, error: coursesError } = await supabase
+              .from('course_enrollments')
+              .select(`
+                progress,
+                enrolled_at,
+                course:course_id (
+                  id,
+                  title,
+                  description,
+                  duration,
+                  level,
+                  thumbnail_url,
+                  category
+                )
+              `)
+              .eq('user_id', user.id)
+              .order('enrolled_at', { ascending: false });
+
+            if (coursesError) {
+              console.error('Error fetching enrolled courses:', coursesError);
+            } else {
+              setEnrolledCourses(coursesData || []);
+            }
+
+            // Fetch badges
+            const { data: badgesData, error: badgesError } = await supabase
+              .from('user_badges')
+              .select(`
+                awarded_at,
+                badge:badge_id(
+                  id,
+                  name,
+                  description,
+                  image_url
+                )
+              `)
+              .eq('user_id', user.id);
+
+            if (badgesError) {
+              console.error('Error fetching badges:', badgesError);
+            } else {
+              setBadges(badgesData || []);
+            }
+
+            // Fetch tokens
+            const { data: walletData, error: walletError } = await supabase
+              .from('user_wallets')
+              .select('tokens')
+              .eq('user_id', user.id)
+              .maybeSingle();
+
+            if (walletError) {
+              console.error('Error fetching tokens:', walletError);
+            } else {
+              setTokens(walletData?.tokens || 0);
+              if (editedProfile) {
+                setEditedProfile(prev => ({ ...prev, tokens: walletData?.tokens || 0 }));
+              }
+            }
+          } catch (error) {
+            console.error('Error:', error);
+          } finally {
+            setLoading(false);
+          }
+        }
+
+        fetchProfileAndCourses();
+      }, [user]);
 
         const handleSave = async () => {
           if (!user || !editedProfile) return;
@@ -371,16 +392,16 @@ import React, { useEffect, useState } from 'react';
                   <h3 className="text-lg font-semibold mb-2">Wallet</h3>
                   <div className="flex items-center space-x-2">
                     <Wallet className="w-6 h-6 text-yellow-500" />
-                    <span className="text-xl font-bold">{profile.tokens} tokens</span>
+                    <span className="text-xl font-bold">{tokens} tokens</span>
                   </div>
                 </div>
 
                 {/* Badges Section */}
-                {profile.badges && profile.badges.length > 0 && (
+                {badges && badges.length > 0 && (
                   <div className="mt-6">
                     <h3 className="text-lg font-semibold mb-3">Badges</h3>
                     <div className="flex flex-wrap gap-4">
-                      {profile.badges.map(({ badge, awarded_at }) => (
+                      {badges.map(({ badge, awarded_at }) => (
                         <div
                           key={badge.id}
                           className="flex items-center space-x-2 bg-white p-2 rounded-lg shadow-sm"
@@ -449,7 +470,7 @@ import React, { useEffect, useState } from 'react';
                           </span>
                         </div>
                         <h3 className="font-semibold mb-2">{course.title}</h3>
-                        <p className="text-sm text-gray-500 mb-2">
+                        <p className="text-sm text-gray-500 mb-4">
                           Enrolled on {format(new Date(enrolled_at), 'MMM d, yyyy')}
                         </p>
                         <div className="space-y-2">
