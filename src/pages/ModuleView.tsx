@@ -202,6 +202,17 @@ import React, { useState, useEffect } from 'react';
       const handleCompleteModule = async () => {
         if (!user || !moduleId || !courseId) return;
 
+        // Check if all quizzes are answered correctly
+        const allQuizzesCorrect = contentItems.every(item => {
+          if (item.type !== 'quiz') return true;
+          return quizFeedback[item.id] === true;
+        });
+
+        if (!allQuizzesCorrect) {
+          alert('Please complete all quizzes correctly before marking the module as complete.');
+          return;
+        }
+
         try {
           const { data: existingProgress, error: fetchError } = await supabase
             .from('module_progress')
@@ -379,13 +390,13 @@ import React, { useState, useEffect } from 'react';
                     onClick={handleCompleteModule}
                     disabled={isModuleCompleted || (contentItems.some(item => item.type === 'quiz') && !contentItems.every(item => {
                       if (item.type !== 'quiz') return true;
-                      return quizFeedback[item.id] !== undefined;
+                      return quizFeedback[item.id] === true;
                     }))}
                     className={`px-4 py-2 rounded-md font-medium ${
                       isModuleCompleted
                         ? 'bg-green-600 hover:bg-green-700 text-white'
                         : 'bg-blue-600 hover:bg-blue-700 text-white'
-                    }`}
+                    } disabled:opacity-50 transition-colors`}
                   >
                     {isModuleCompleted ? 'Completed' : 'Mark Complete'}
                   </button>
