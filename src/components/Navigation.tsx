@@ -66,10 +66,10 @@ import React from 'react';
 
           {/* Bottom navigation for mobile */}
           <nav className="fixed bottom-0 left-0 right-0 md:hidden bg-white border-t border-gray-200">
-            <div className="grid grid-cols-4 h-16">
+            <div className={`grid h-16 ${user ? 'grid-cols-5' : 'grid-cols-4'}`}>
               <Link
                 to="/"
-                className={`flex flex-col items-center justify-center ${
+                className={`flex flex-col items-center justify-center w-full ${
                   location.pathname === '/' ? 'text-blue-600' : 'text-gray-600'
                 }`}
               >
@@ -78,7 +78,7 @@ import React from 'react';
               </Link>
               <Link
                 to="/meetups"
-                className={`flex flex-col items-center justify-center ${
+                className={`flex flex-col items-center justify-center w-full ${
                   location.pathname.startsWith('/meetups') ? 'text-blue-600' : 'text-gray-600'
                 }`}
               >
@@ -87,7 +87,7 @@ import React from 'react';
               </Link>
               <Link
                 to="/courses"
-                className={`flex flex-col items-center justify-center ${
+                className={`flex flex-col items-center justify-center w-full ${
                   location.pathname.startsWith('/courses') ? 'text-blue-600' : 'text-gray-600'
                 }`}
               >
@@ -95,19 +95,30 @@ import React from 'react';
                 <span className="text-xs mt-1">Courses</span>
               </Link>
               {user ? (
-                <Link
-                  to="/profile"
-                  className={`flex flex-col items-center justify-center ${
-                    location.pathname === '/profile' ? 'text-blue-600' : 'text-gray-600'
-                  }`}
-                >
-                  <User size={24} />
-                  <span className="text-xs mt-1">Profile</span>
-                </Link>
+                <>
+                  <Link
+                    to="/profile"
+                    className={`flex flex-col items-center justify-center w-full ${
+                      location.pathname === '/profile' ? 'text-blue-600' : 'text-gray-600'
+                    }`}
+                  >
+                    <User size={24} />
+                    <span className="text-xs mt-1">Profile</span>
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className={`flex flex-col items-center justify-center w-full ${
+                      location.pathname === '/login' ? 'text-blue-600' : 'text-gray-600'
+                    }`}
+                  >
+                    <LogOut size={24} />
+                    <span className="text-xs mt-1">Logout</span>
+                  </button>
+                </>
               ) : (
                 <Link
                   to="/login"
-                  className={`flex flex-col items-center justify-center ${
+                  className={`flex flex-col items-center justify-center w-full ${
                     location.pathname === '/login' ? 'text-blue-600' : 'text-gray-600'
                   }`}
                 >
