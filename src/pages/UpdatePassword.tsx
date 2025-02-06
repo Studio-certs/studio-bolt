@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function UpdatePassword() {
   const [newPassword, setNewPassword] = useState('');
@@ -10,6 +11,7 @@ export default function UpdatePassword() {
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { signOut } = useAuth();
 
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
@@ -55,6 +57,9 @@ export default function UpdatePassword() {
       if (error) throw error;
 
       setSuccess(true);
+      // Sign out after successful password update
+      await signOut();
+
       setTimeout(() => {
         navigate('/login');
       }, 3000);
