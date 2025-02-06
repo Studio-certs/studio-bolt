@@ -16,6 +16,7 @@ import MyLearning from './pages/MyLearning';
 import AdminDashboard from './pages/AdminDashboard';
 import ModuleEditor from './pages/admin/ModuleEditor';
 import CourseDetailsAdmin from './pages/admin/crm/CourseDetails';
+import UpdatePassword from './pages/UpdatePassword';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/update-password" element={<UpdatePassword />} />
               <Route path="/profile" element={
                 <ProtectedRoute>
                   <Profile />

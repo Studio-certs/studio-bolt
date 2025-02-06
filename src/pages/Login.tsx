@@ -32,7 +32,7 @@ export default function Login() {
       setError('');
       setLoading(true);
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `https://studio-bolt-dev.netlify.app/update-password`,
+        redirectTo: `${window.location.origin}/update-password`,
       });
       if (error) throw error;
       setForgotPasswordSent(true);
