@@ -23,7 +23,11 @@ export default function UpdatePassword() {
     // Check if there's a session and redirect if not
     const checkSession = async () => {
       if (!token) {
-        navigate('/login');
+        // Check if there's a session and redirect if not
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          navigate('/login');
+        }
       }
     };
 
@@ -42,6 +46,7 @@ export default function UpdatePassword() {
       setError('');
       setLoading(true);
 
+      // Update password using access token
       const { error } = await supabase.auth.updateUser({
         password: newPassword,
       });
