@@ -53,8 +53,7 @@ export default function UpdatePassword() {
 
       // Update password using access token
       const { error } = await supabase.auth.updateUser({
-        password: newPassword,
-        access_token: accessToken,
+        password: newPassword
       });
 
       if (error) throw error;
