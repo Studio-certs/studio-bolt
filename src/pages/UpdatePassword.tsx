@@ -46,9 +46,15 @@ export default function UpdatePassword() {
       setError('');
       setLoading(true);
 
+      if (!accessToken) {
+        setError('Access token not found');
+        return;
+      }
+
       // Update password using access token
       const { error } = await supabase.auth.updateUser({
         password: newPassword,
+        access_token: accessToken,
       });
 
       if (error) throw error;
