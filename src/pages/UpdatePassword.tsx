@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
 export default function UpdatePassword() {
@@ -9,12 +9,13 @@ export default function UpdatePassword() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
   useEffect(() => {
     // Extract access token from URL hash
-    const hash = window.location.hash;
+    const hash = location.hash;
     const params = new URLSearchParams(hash.substring(1));
     const token = params.get('access_token');
     setAccessToken(token);
@@ -27,7 +28,7 @@ export default function UpdatePassword() {
     };
 
     checkSession();
-  }, [navigate]);
+  }, [navigate, location.hash]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
