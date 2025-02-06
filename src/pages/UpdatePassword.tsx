@@ -10,11 +10,18 @@ export default function UpdatePassword() {
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+
   useEffect(() => {
+    // Extract access token from URL hash
+    const hash = window.location.hash;
+    const params = new URLSearchParams(hash.substring(1));
+    const token = params.get('access_token');
+    setAccessToken(token);
+
     // Check if there's a session and redirect if not
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      if (!token) {
         navigate('/login');
       }
     };
