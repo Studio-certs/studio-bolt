@@ -17,8 +17,8 @@ export default function UpdatePassword() {
     // Extract access token from URL hash
     const hash = location.hash;
     const params = new URLSearchParams(hash.substring(1));
-		console.log("params: ", params);
     const token = params.get('access_token');
+
     setAccessToken(token);
 
     // Check if there's a session and redirect if not
@@ -47,15 +47,9 @@ export default function UpdatePassword() {
       setError('');
       setLoading(true);
 
-      if (!accessToken) {
-        setError('Access token not found');
-        return;
-      }
-
       // Update password using access token
       const { error } = await supabase.auth.updateUser({
         password: newPassword,
-        access_token: accessToken,
       });
 
       if (error) throw error;
