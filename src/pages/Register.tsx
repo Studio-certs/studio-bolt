@@ -29,15 +29,15 @@ export default function Register() {
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4">
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md">
-        <div className="flex justify-center pb-4">
+        <div className="flex justify-center">
           <img
             src="https://studio-bucket.s3-ap-southeast-2.amazonaws.com/image/profilePicture/original/Profile_5OupGMvDGQPM.png" // Replace with your logo URL
             alt="Logo"
-            className="h-24"
+            className="h-[15rem]"
           />
         </div>
         <div>
-          <h2 className="text-center text-3xl font-bold text-gray-900">Create your account</h2>
+          <h2 className="text-center text-2xl font-bold text-gray-900">Create your account</h2>
         </div>
         {error && (
           <div className="bg-red-50 text-red-500 p-3 rounded-md text-sm">
