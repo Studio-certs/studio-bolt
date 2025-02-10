@@ -49,7 +49,7 @@ export default function Login() {
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md">
         <div className="flex justify-center pb-4">
           <img
-            src="https://studio-bucket.s3-ap-southeast-2.amazonaws.com/image/profilePicture/original/Profile_mCdpSYFVwXL3.png" // Replace with your logo URL
+            src="https://studio-bucket.s3-ap-southeast-2.amazonaws.com/image/profilePicture/original/Profile_5OupGMvDGQPM.png" // Replace with your logo URL
             alt="Logo"
             className="h-24"
           />

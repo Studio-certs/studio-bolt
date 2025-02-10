@@ -23,7 +23,7 @@ export default function Navigation() {
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center">
               <img
-                src="https://studio-bucket.s3-ap-southeast-2.amazonaws.com/image/profilePicture/original/Profile_mCdpSYFVwXL3.png"
+                src="https://studio-bucket.s3-ap-southeast-2.amazonaws.com/image/profilePicture/original/Profile_hksQdQJp7c64.png"
                 alt="Logo"
                 className="h-8 mr-2"
               />
