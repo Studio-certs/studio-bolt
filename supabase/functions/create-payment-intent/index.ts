@@ -3,8 +3,17 @@ import { supabaseClient } from '../_shared/supabaseClient.ts';
 import Stripe from 'https://esm.sh/stripe@12.17.0?target=deno';
 
 Deno.serve(async (req) => {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'authorization, content-type, x-supabase-trace-id, x-client-info',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  };
+
   if (req.method === 'OPTIONS') {
-    return cors(req);
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders,
+    });
   }
 
   try {
@@ -31,8 +40,7 @@ Deno.serve(async (req) => {
         status: 200,
         headers: {
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Headers': 'authorization, content-type, x-supabase-trace-id',
+          ...corsHeaders,
         },
       }
     );
@@ -43,15 +51,8 @@ Deno.serve(async (req) => {
       status: 400,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'authorization, content-type, x-supabase-trace-id',
+        ...corsHeaders,
       },
     });
   }
 });
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, content-type, x-supabase-trace-id',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};

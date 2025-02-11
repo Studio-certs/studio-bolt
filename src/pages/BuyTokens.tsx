@@ -4,6 +4,7 @@ import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { Wallet, CreditCard, ShieldCheck } from 'lucide-react';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '').then(stripe => {
   if (!stripe) {
@@ -11,6 +12,8 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 
   }
   return stripe;
 });
+
+const tokenAmounts = [10, 50, 100, 150, 200, 250];
 
 export default function BuyTokens() {
   const [clientSecret, setClientSecret] = useState('');
@@ -52,34 +55,66 @@ export default function BuyTokens() {
   const options = {
     clientSecret,
     appearance,
+    layout: {
+      type: 'tabs',
+      defaultCollapsed: false,
+    }
   };
 
   return (
-    <div className="max-w-md mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Buy Tokens</h1>
-      <p className="mb-4">1 Token = 1 AUD</p>
+    <div className="min-h-[80vh] flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-xl">
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Top Up Your Wallet
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Securely purchase tokens to unlock premium content and features.
+          </p>
+        </div>
+        <div className="flex items-center justify-center mb-4">
+          <Wallet className="w-10 h-10 text-yellow-500 mr-2" />
+          <p className="text-xl font-semibold">1 Token = 1 AUD</p>
+        </div>
 
-      <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
-        Amount (AUD)
-      </label>
-      <input
-        type="number"
-        id="amount"
-        value={amount}
-        onChange={(e) => setAmount(parseInt(e.target.value))}
-        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-      />
+        <div className="space-y-4">
+          <label className="block text-sm font-medium text-gray-700">Choose Token Amount</label>
+          <div className="grid grid-cols-3 gap-3">
+            {tokenAmounts.map(tokenAmount => (
+              <button
+                key={tokenAmount}
+                onClick={() => setAmount(tokenAmount)}
+                className={`group relative w-full flex justify-center py-2 px-4 border rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                  amount === tokenAmount
+                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                {tokenAmount}
+              </button>
+            ))}
+          </div>
+        </div>
 
-      {clientSecret && (
-        <Elements options={options} stripe={stripePromise}>
-          <CheckoutForm />
-        </Elements>
-      )}
+        <div className="text-center">
+          <p className="text-gray-600 text-sm">
+            You are purchasing <span className="font-semibold">{amount}</span> tokens for <span className="font-semibold">{amount} AUD</span>
+          </p>
+        </div>
+
+        {clientSecret && (
+          <div className="mt-4">
+            <Elements options={options} stripe={stripePromise}>
+              <CheckoutForm amount={amount} />
+            </Elements>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-const CheckoutForm = () => {
+const CheckoutForm = ({ amount }: { amount: number }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -117,11 +152,6 @@ const CheckoutForm = () => {
 
         const userTokens = walletData?.tokens || 0;
 
-        // Fetch the payment intent to get the amount
-        // const paymentIntent = await stripe.retrievePaymentIntent(elements._owner.paymentIntent.id);
-        // const amount = paymentIntent.paymentIntent.amount / 100;
-        const amount = 10;
-
         const { error: updateError } = await supabase
           .from('user_wallets')
           .update({ tokens: userTokens + amount })
@@ -157,10 +187,13 @@ const CheckoutForm = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="space-y-6">
       <PaymentElement />
       {errorMessage && <div className="text-red-500 mt-4">{errorMessage}</div>}
-      <button className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mt-4" disabled={!stripe || !elements}>
+      <button className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" disabled={!stripe || !elements}>
+        <span className="absolute left-0 inset-y-0 flex items-center pl-3">
+          <ShieldCheck className="h-5 w-5 text-blue-500 group-hover:text-blue-400" aria-hidden="true" />
+        </span>
         Pay Now
       </button>
     </form>
