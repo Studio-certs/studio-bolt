@@ -406,7 +406,7 @@ export default function Profile() {
               </div>
               <Link
                 to="/buy-tokens"
-                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md"
               >
                 <PlusCircle className="w-4 h-4 mr-2" />
                 Buy Tokens

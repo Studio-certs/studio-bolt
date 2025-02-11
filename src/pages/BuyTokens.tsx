@@ -5,7 +5,12 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '').then(stripe => {
+  if (!stripe) {
+    console.error("Stripe failed to load. Check your publishable key.");
+  }
+  return stripe;
+});
 
 export default function BuyTokens() {
   const [clientSecret, setClientSecret] = useState('');
@@ -19,16 +24,20 @@ export default function BuyTokens() {
       if (!user) return;
 
       try {
-        const response = await fetch('/functions/create-payment-intent', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ amount: amount * 100, user_id: user.id }), // Amount in cents
+        const { data, error } = await supabase.functions.invoke('create-payment-intent', {
+          body: JSON.stringify({ amount: amount * 100, user_id: user.id }),
         });
 
-        const { clientSecret: cs } = await response.json();
-        setClientSecret(cs);
+        if (error) {
+          console.error('Error invoking function:', error);
+          return;
+        }
+
+        if (data && data.clientSecret) {
+          setClientSecret(data.clientSecret);
+        } else {
+          console.error('Client secret is missing in the response.');
+        }
       } catch (error) {
         console.error('Error fetching client secret:', error);
       }
@@ -109,8 +118,9 @@ const CheckoutForm = () => {
         const userTokens = walletData?.tokens || 0;
 
         // Fetch the payment intent to get the amount
-        const paymentIntent = await stripe.retrievePaymentIntent(elements._owner.paymentIntent.id);
-        const amount = paymentIntent.paymentIntent.amount / 100;
+        // const paymentIntent = await stripe.retrievePaymentIntent(elements._owner.paymentIntent.id);
+        // const amount = paymentIntent.paymentIntent.amount / 100;
+        const amount = 10;
 
         const { error: updateError } = await supabase
           .from('user_wallets')

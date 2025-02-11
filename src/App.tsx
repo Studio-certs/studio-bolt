@@ -1,6 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navigation from './components/Navigation';
@@ -18,6 +17,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import ModuleEditor from './pages/admin/ModuleEditor';
 import CourseDetailsAdmin from './pages/admin/crm/CourseDetails';
 import UpdatePassword from './pages/UpdatePassword';
+import BuyTokens from './pages/BuyTokens';
 
 function MobileTopBar() {
   const location = useLocation();
@@ -68,6 +68,11 @@ function WithMobileTopBar() {
             <Route path="/profile" element={
               <ProtectedRoute>
                 <Profile />
+              </ProtectedRoute>
+            } />
+            <Route path="/buy-tokens" element={
+              <ProtectedRoute>
+                <BuyTokens />
               </ProtectedRoute>
             } />
             <Route path="/my-learning" element={
