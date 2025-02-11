@@ -42,7 +42,7 @@ addEventListener('fetch', async (event) => {
         },
       }
     );
-  } catch (error: any) {
+  } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
       status: 400,
       headers: {

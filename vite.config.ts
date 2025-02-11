@@ -13,9 +13,9 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
+      external: ['stripe'],
       input: {
         main: resolve(__dirname, 'index.html'),
-        // Add the function entry point
         'create-payment-intent': resolve(__dirname, 'src/functions/create-payment-intent.js'),
       },
       output: {
