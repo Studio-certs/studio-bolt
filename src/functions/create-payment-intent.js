@@ -12,7 +12,7 @@ addEventListener('fetch', async (event) => {
       status: 204,
       headers: {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'authorization, content-type, x-supabase-trace-id',
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
       },
     });
@@ -38,7 +38,7 @@ addEventListener('fetch', async (event) => {
         headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Headers': 'authorization, content-type, x-supabase-trace-id',
+          'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
         },
       }
     );
@@ -48,7 +48,7 @@ addEventListener('fetch', async (event) => {
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'authorization, content-type, x-supabase-trace-id',
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
       },
     });
   }
