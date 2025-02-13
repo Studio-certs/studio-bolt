@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
 
     // Create a Payment Intent
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount), // Ensure amount is an integer (cents)
+      amount: Math.round(amount) * 100, // Ensure amount is an integer (cents)
       currency: 'aud',
       automatic_payment_methods: {
         enabled: true,
