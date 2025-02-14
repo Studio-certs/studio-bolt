@@ -89,27 +89,6 @@ export default function Profile() {
 
           const { tokens } = await response.json();
 
-          // Update user's wallet
-          const { data: walletData, error: walletError } = await supabase
-            .from('user_wallets')
-            .select('tokens')
-            .eq('user_id', user.id)
-            .maybeSingle();
-
-          if (walletError) throw walletError;
-
-          const currentTokens = walletData?.tokens || 0;
-          const newTokens = currentTokens + tokens;
-
-          const { error: updateError } = await supabase
-            .from('user_wallets')
-            .upsert({ 
-              user_id: user.id,
-              tokens: newTokens
-            });
-
-          if (updateError) throw updateError;
-
           // Remove the session_id from the URL
           navigate('/profile', { replace: true });
           
