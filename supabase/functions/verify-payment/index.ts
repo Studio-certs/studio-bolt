@@ -25,21 +25,11 @@ Deno.serve(async (req) => {
 
     // Get and validate the request body
     const body = await req.json();
-    const { amount, user_id } = body;
+    const { session_id, user_id } = body;
 
     // Validate required parameters
-    if (!amount || !user_id) {
-      throw new Error('Missing required parameters: amount and user_id are required');
-    }
-
-    // Validate amount is a positive number
-    if (typeof amount !== 'number' || amount <= 0) {
-      throw new Error('Amount must be a positive number');
-    }
-
-    // Validate user_id is a string
-    if (typeof user_id !== 'string' || !user_id.trim()) {
-      throw new Error('Invalid user_id');
+    if (!session_id || !user_id) {
+      throw new Error('Missing required parameters');
     }
 
     // Get Stripe key from environment variable
@@ -54,33 +44,27 @@ Deno.serve(async (req) => {
       httpClient: Stripe.createFetchHttpClient(),
     });
 
-    // Create a Checkout Session
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'aud',
-            product_data: {
-              name: 'Tokens',
-              description: `${amount} tokens for your account`,
-            },
-            unit_amount: 100, // $1 per token
-          },
-          quantity: amount,
-        },
-      ],
-      mode: 'payment',
-      success_url: `${req.headers.get('origin')}/profile?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get('origin')}/buy-tokens`,
-      metadata: {
-        user_id,
-        tokens: amount.toString(),
-      },
-    });
+    // Retrieve the session
+    const session = await stripe.checkout.sessions.retrieve(session_id);
+
+    // Verify the payment was successful
+    if (session.payment_status !== 'paid') {
+      throw new Error('Payment not completed');
+    }
+
+    // Verify the user_id matches
+    if (session.metadata.user_id !== user_id) {
+      throw new Error('Invalid user');
+    }
+
+    // Get the number of tokens from metadata
+    const tokens = parseInt(session.metadata.tokens, 10);
 
     return new Response(
-      JSON.stringify({ sessionId: session.id, url: session.url }),
+      JSON.stringify({ 
+        success: true,
+        tokens,
+      }),
       {
         status: 200,
         headers: {
@@ -90,7 +74,7 @@ Deno.serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error creating checkout session:', error);
+    console.error('Error verifying payment:', error);
 
     return new Response(
       JSON.stringify({

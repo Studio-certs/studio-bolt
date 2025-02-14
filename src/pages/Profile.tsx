@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { BookOpen, Clock, Award, MapPin, Globe, Linkedin, Github, Twitter, Edit2, X, Check, Camera, Wallet, PlusCircle } from 'lucide-react';
-import { format, isValid } from 'date-fns';
+import { BookOpen, Clock, Award, MapPin, Globe, Linkedin, Github, Twitter, Edit2, X, Check, Camera, Wallet, PlusCircle, AlertCircle } from 'lucide-react';
+import { format } from 'date-fns';
 import ImageUpload from '../components/ImageUpload';
 
 interface UserProfile {
@@ -45,6 +45,9 @@ interface EnrolledCourse {
 }
 
 export default function Profile() {
+  const [searchParams] = useSearchParams();
+  const sessionId = searchParams.get('session_id');
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
@@ -54,6 +57,65 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [badges, setBadges] = useState<any[]>([]);
   const [tokens, setTokens] = useState<number>(0);
+
+  useEffect(() => {
+    if (sessionId && user) {
+      // Handle successful payment
+      const handleSuccessfulPayment = async () => {
+        try {
+          // Fetch the session from Stripe (this would be handled by your backend)
+          const response = await fetch('https://ydvvokjdlqpgpasrnwtd.supabase.co/functions/v1/verify-payment', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${process.env.VITE_SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({
+              session_id: sessionId,
+              user_id: user.id,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to verify payment');
+          }
+
+          const { tokens } = await response.json();
+
+          // Update user's wallet
+          const { data: walletData, error: walletError } = await supabase
+            .from('user_wallets')
+            .select('tokens')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          if (walletError) throw walletError;
+
+          const currentTokens = walletData?.tokens || 0;
+          const newTokens = currentTokens + tokens;
+
+          const { error: updateError } = await supabase
+            .from('user_wallets')
+            .upsert({ 
+              user_id: user.id,
+              tokens: newTokens
+            });
+
+          if (updateError) throw updateError;
+
+          // Remove the session_id from the URL
+          navigate('/profile', { replace: true });
+          
+          // Show success message (you could add a toast notification here)
+        } catch (error) {
+          console.error('Error processing payment:', error);
+          // Show error message to user
+        }
+      };
+
+      handleSuccessfulPayment();
+    }
+  }, [sessionId, user, navigate]);
 
   useEffect(() => {
     async function fetchProfileAndCourses() {

@@ -1,86 +1,54 @@
-import React, { useState, useEffect } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { supabase } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wallet, CreditCard, ShieldCheck, AlertCircle } from 'lucide-react';
-
-// Initialize Stripe with better error handling
-const stripePromise = (async () => {
-  const key = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
-  if (!key) {
-    throw new Error('Stripe publishable key is not configured');
-  }
-  const stripe = await loadStripe(key);
-  if (!stripe) {
-    throw new Error('Failed to initialize Stripe');
-  }
-  return stripe;
-})();
+import { useAuth } from '../contexts/AuthContext';
+import { Wallet, AlertCircle } from 'lucide-react';
 
 const tokenAmounts = [10, 50, 100, 150, 200, 250];
 
 export default function BuyTokens() {
-  const [clientSecret, setClientSecret] = useState('');
-  const [amount, setAmount] = useState(10); // Default amount
+  const [amount, setAmount] = useState(10);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchClientSecret = async () => {
-      if (!user) return;
+  const handlePurchase = async () => {
+    if (!user) return;
 
-      try {
-        setLoading(true);
-        setError(null);
+    try {
+      setLoading(true);
+      setError(null);
 
-        // Validate amount before making the request
-        if (amount <= 0 || !Number.isInteger(amount)) {
-          throw new Error('Invalid amount');
-        }
+      const response = await fetch('https://ydvvokjdlqpgpasrnwtd.supabase.co/functions/v1/create-payment-intent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          amount,
+          user_id: user.id,
+        }),
+      });
 
-        const { data, error: functionError } = await supabase.functions.invoke('create-payment-intent', {
-          body: { 
-            amount: amount * 100, // Convert to cents
-            user_id: user.id 
-          },
-        });
-
-        if (functionError) {
-          console.error('Function error:', functionError);
-          throw new Error('Payment service is temporarily unavailable');
-        }
-
-        if (!data?.clientSecret) {
-          throw new Error('Invalid response from payment service');
-        }
-
-        setClientSecret(data.clientSecret);
-      } catch (err: any) {
-        console.error('Payment setup error:', err);
-        setError(err.message || 'Failed to initialize payment. Please try again later.');
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Failed to create checkout session');
       }
-    };
 
-    fetchClientSecret();
-  }, [amount, user]);
+      const { url } = await response.json();
+      if (!url) {
+        throw new Error('Invalid response from payment service');
+      }
 
-  const appearance = {
-    theme: 'stripe',
-    variables: {
-      colorPrimary: '#2563eb',
-    },
-  };
-
-  const options = {
-    clientSecret,
-    appearance,
-    loader: 'auto' as const,
+      // Redirect to Stripe Checkout
+      window.location.href = url;
+    } catch (err: any) {
+      console.error('Payment setup error:', err);
+      setError(err.message || 'Failed to initialize payment. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!user) {
@@ -155,130 +123,14 @@ export default function BuyTokens() {
           </p>
         </div>
 
-        {loading ? (
-          <div className="flex justify-center py-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          </div>
-        ) : clientSecret ? (
-          <div className="mt-4">
-            <Elements options={options} stripe={stripePromise}>
-              <CheckoutForm amount={amount} />
-            </Elements>
-          </div>
-        ) : null}
+        <button
+          onClick={handlePurchase}
+          disabled={loading}
+          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+        >
+          {loading ? 'Processing...' : 'Proceed to Checkout'}
+        </button>
       </div>
     </div>
   );
 }
-
-const CheckoutForm = ({ amount }: { amount: number }) => {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [error, setError] = useState<string | null>(null);
-  const [processing, setProcessing] = useState(false);
-  const { user } = useAuth();
-  const navigate = useNavigate();
-
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-
-    if (!stripe || !elements || !user) {
-      return;
-    }
-
-    try {
-      setProcessing(true);
-      setError(null);
-
-      const { error: paymentError, paymentIntent } = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          return_url: `${window.location.origin}/profile`,
-          payment_method_data: {
-            billing_details: {
-              email: user.email,
-            },
-          },
-        },
-        redirect: 'if_required'
-      });
-
-      if (paymentError) {
-        throw paymentError;
-      }
-
-      if (paymentIntent?.status === 'succeeded') {
-        try {
-          // Update user wallet
-          const { data: walletData, error: walletError } = await supabase
-            .from('user_wallets')
-            .select('tokens')
-            .eq('user_id', user.id)
-            .maybeSingle();
-
-          if (walletError) throw walletError;
-
-          const currentTokens = walletData?.tokens || 0;
-          const newTokens = currentTokens + amount;
-
-          const { error: updateError } = await supabase
-            .from('user_wallets')
-            .upsert({ 
-              user_id: user.id,
-              tokens: newTokens
-            });
-
-          if (updateError) throw updateError;
-
-          // Create transaction record
-          const { error: transactionError } = await supabase
-            .from('payment_transactions')
-            .insert({
-              user_id: user.id,
-              amount: amount,
-              status: 'success',
-              stripe_checkout_id: paymentIntent.id
-            });
-
-          if (transactionError) {
-            console.error('Error creating transaction record:', transactionError);
-          }
-
-          navigate('/profile');
-        } catch (err: any) {
-          console.error('Database error:', err);
-          throw new Error('Payment successful but failed to update wallet. Please contact support.');
-        }
-      }
-    } catch (err: any) {
-      console.error('Payment error:', err);
-      setError(err.message || 'An error occurred during payment processing');
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <PaymentElement />
-      
-      {error && (
-        <div className="text-red-600 text-sm flex items-center">
-          <AlertCircle className="w-4 h-4 mr-1" />
-          {error}
-        </div>
-      )}
-
-      <button
-        type="submit"
-        disabled={!stripe || !elements || processing}
-        className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-      >
-        <span className="absolute left-0 inset-y-0 flex items-center pl-3">
-          <ShieldCheck className="h-5 w-5 text-blue-500 group-hover:text-blue-400" />
-        </span>
-        {processing ? 'Processing...' : 'Pay Now'}
-      </button>
-    </form>
-  );
-};
