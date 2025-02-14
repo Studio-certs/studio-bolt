@@ -85,63 +85,41 @@ Deno.serve(async (req) => {
     const amountPaid = session.amount_total ? session.amount_total / 100 : tokens; // Convert from cents to dollars
 
     try {
-      // Create a payment transaction record
-      const { error: transactionError } = await supabaseClient
-        .from('payment_transactions')
-        .insert({
-          user_id,
-          amount: amountPaid,
-          transaction_time: new Date().toISOString(),
-          status: 'success',
-          stripe_checkout_id: session_id
-        });
+      // Call the handle_payment_success function
+      const { data, error: rpcError } = await supabaseClient.rpc('handle_payment_success', {
+        p_user_id: user_id,
+        p_amount: amountPaid,
+        p_tokens: tokens,
+        p_stripe_checkout_id: session_id
+      });
 
-      if (transactionError) {
-        console.error('Error creating transaction record:', transactionError);
-        throw transactionError;
+      if (rpcError) {
+        console.error('Error in handle_payment_success:', rpcError);
+        throw rpcError;
       }
 
-      // Update user's wallet
-      const { data: walletData, error: walletError } = await supabaseClient
-        .from('user_wallets')
-        .select('tokens')
-        .eq('user_id', user_id)
-        .maybeSingle();
+      if (!data) {
+        throw new Error('No response from handle_payment_success');
+      }
 
-      if (walletError) throw walletError;
-
-      const currentTokens = walletData?.tokens || 0;
-      const newTokens = currentTokens + tokens;
-
-      const { error: updateError } = await supabaseClient
-        .from('user_wallets')
-        .upsert({ 
-          user_id: user_id,
-          tokens: newTokens,
-          updated_at: new Date().toISOString()
-        });
-
-      if (updateError) throw updateError;
-
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          tokens,
+          amount: amountPaid
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        }
+      );
     } catch (dbError) {
       console.error('Database error:', dbError);
       throw new Error('Failed to update transaction records');
     }
-
-    return new Response(
-      JSON.stringify({ 
-        success: true,
-        tokens,
-        amount: amountPaid
-      }),
-      {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          ...corsHeaders,
-        },
-      }
-    );
   } catch (error) {
     console.error('Error verifying payment:', error);
 
