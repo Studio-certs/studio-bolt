@@ -19,7 +19,7 @@ export default function Navigation() {
   return (
     <>
       {/* Top navigation for desktop */}
-      <nav className="hidden md:block bg-white shadow-sm fixed w-full top-0 z-50">
+      <nav className="fixed top-0 left-0 right-0 bg-white shadow-sm z-50">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center">
@@ -72,7 +72,7 @@ export default function Navigation() {
       </nav>
 
       {/* Bottom navigation for mobile */}
-      <nav className="fixed bottom-0 left-0 right-0 md:hidden bg-white border-t border-gray-200 z-[9999]">
+      <nav className="fixed bottom-0 left-0 right-0 md:hidden bg-white border-t border-gray-200 z-50">
         <div className={`grid h-16 ${user ? 'grid-cols-5' : 'grid-cols-4'}`}>
           <Link
             to="/"
@@ -135,10 +135,6 @@ export default function Navigation() {
           )}
         </div>
       </nav>
-
-      {/* Add padding to account for fixed navigation */}
-      <div className="h-16 md:block hidden"></div>
-      <div className="h-16 block md:hidden"></div>
     </>
   );
 }

@@ -23,37 +23,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Check active sessions and sets the user
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
-      checkUserRole(session?.user?.id);
+      if (session?.user) {
+        checkUserRole(session.user.id);
+      } else {
+        setIsAdmin(false);
+        setLoading(false);
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      checkUserRole(session?.user?.id);
+      if (session?.user) {
+        checkUserRole(session.user.id);
+      } else {
+        setIsAdmin(false);
+        setLoading(false);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  async function checkUserRole(userId: string | undefined) {
-    if (!userId) {
-      setIsAdmin(false);
-      setLoading(false);
-      return;
-    }
+  async function checkUserRole(userId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .maybeSingle();
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', userId)
-      .maybeSingle();
-
-    if (error) {
-      console.error('Error fetching user role:', error);
-      setIsAdmin(false);
-    } else {
+      if (error) throw error;
       setIsAdmin(data?.role === 'admin' || false);
+    } catch (error) {
+      console.error('Error checking user role:', error);
+      setIsAdmin(false);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   const signIn = async (email: string, password: string) => {
@@ -72,28 +78,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           },
         },
       });
-      console.log('Supabase signUp response:', response);
+      
       if (response.error) throw response.error;
 
       // Create user wallet
-      try {
-        const { data: walletData, error: walletError } = await supabase
-          .from('user_wallets')
-          .insert({
-            user_id: response.data.user.id,
-            tokens: 0
-          })
-          .select('tokens')
-          .maybeSingle();
+      if (response.data.user) {
+        try {
+          const { error: walletError } = await supabase
+            .from('user_wallets')
+            .insert({
+              user_id: response.data.user.id,
+              tokens: 0
+            });
 
-        if (walletError) {
+          if (walletError) throw walletError;
+        } catch (walletError: any) {
           console.error('Error creating user wallet:', walletError);
           throw new Error('Failed to create user wallet');
         }
-        console.log('User wallet created:', walletData);
-      } catch (walletError: any) {
-        console.error('Error creating user wallet:', walletError);
-        throw new Error('Failed to create user wallet');
       }
     } catch (error: any) {
       console.error('Error during sign up:', error);
