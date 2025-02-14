@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { cors } from '../_shared/cors.ts';
 import Stripe from 'https://esm.sh/stripe@12.17.0?target=deno';
+import { supabaseClient } from '../_shared/supabaseClient.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -23,6 +24,19 @@ Deno.serve(async (req) => {
       throw new Error('Method not allowed');
     }
 
+    // Verify JWT token
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('Missing authorization header');
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+
+    if (authError || !user) {
+      throw new Error('Invalid authorization token');
+    }
+
     // Get and validate the request body
     const body = await req.json();
     const { session_id, user_id } = body;
@@ -32,8 +46,13 @@ Deno.serve(async (req) => {
       throw new Error('Missing required parameters');
     }
 
+    // Verify the authenticated user matches the requested user_id
+    if (user.id !== user_id) {
+      throw new Error('Unauthorized: User ID mismatch');
+    }
+
     // Get Stripe key from environment variable
-    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY') || 'sk_test_51QpJiVIkKA0bpFEPXNcYVqMmtlTCbVXEQ0iVHdTwa1rCBS35HMjw8MNkktXt7EPEBSWciSnMXeB0bSksHuwmMgaB00ANewcZD9';
+    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
     if (!stripeKey) {
       throw new Error('Stripe key not configured');
     }
@@ -59,6 +78,20 @@ Deno.serve(async (req) => {
 
     // Get the number of tokens from metadata
     const tokens = parseInt(session.metadata.tokens, 10);
+
+    // Create a payment transaction record
+    const { error: transactionError } = await supabaseClient
+      .from('payment_transactions')
+      .insert({
+        user_id,
+        amount: tokens,
+        status: 'success',
+        stripe_checkout_id: session_id
+      });
+
+    if (transactionError) {
+      console.error('Error creating transaction record:', transactionError);
+    }
 
     return new Response(
       JSON.stringify({ 

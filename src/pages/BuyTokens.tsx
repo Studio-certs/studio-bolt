@@ -9,7 +9,7 @@ export default function BuyTokens() {
   const [amount, setAmount] = useState(10);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { user } = useAuth();
+  const { user, supabase } = useAuth();
   const navigate = useNavigate();
 
   const handlePurchase = async () => {
@@ -19,11 +19,16 @@ export default function BuyTokens() {
       setLoading(true);
       setError(null);
 
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
+      }
+
       const response = await fetch('https://ydvvokjdlqpgpasrnwtd.supabase.co/functions/v1/create-payment-intent', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.VITE_SUPABASE_ANON_KEY}`,
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           amount,

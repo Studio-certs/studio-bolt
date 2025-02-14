@@ -57,18 +57,25 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [badges, setBadges] = useState<any[]>([]);
   const [tokens, setTokens] = useState<number>(0);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (sessionId && user) {
       // Handle successful payment
       const handleSuccessfulPayment = async () => {
         try {
-          // Fetch the session from Stripe (this would be handled by your backend)
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) {
+            throw new Error('No active session');
+          }
+
+          // Verify the payment
           const response = await fetch('https://ydvvokjdlqpgpasrnwtd.supabase.co/functions/v1/verify-payment', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${process.env.VITE_SUPABASE_ANON_KEY}`,
+              'Authorization': `Bearer ${session.access_token}`,
             },
             body: JSON.stringify({
               session_id: sessionId,
@@ -106,10 +113,16 @@ export default function Profile() {
           // Remove the session_id from the URL
           navigate('/profile', { replace: true });
           
-          // Show success message (you could add a toast notification here)
-        } catch (error) {
+          // Show success message
+          setSuccess(`Successfully added ${tokens} tokens to your wallet!`);
+          setTimeout(() => setSuccess(null), 5000);
+          
+          // Refresh the profile data
+          fetchProfileAndCourses();
+        } catch (error: any) {
           console.error('Error processing payment:', error);
-          // Show error message to user
+          setError(error.message || 'Failed to process payment');
+          setTimeout(() => setError(null), 5000);
         }
       };
 
@@ -117,103 +130,103 @@ export default function Profile() {
     }
   }, [sessionId, user, navigate]);
 
-  useEffect(() => {
-    async function fetchProfileAndCourses() {
-      if (!user) return;
+  const fetchProfileAndCourses = async () => {
+    if (!user) return;
 
-      try {
-        // Fetch profile
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select(`
-            *,
-            wallet:user_wallets(
-              tokens
-            )
-          `)
-          .eq('id', user.id)
-          .single();
+    try {
+      // Fetch profile
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select(`
+          *,
+          wallet:user_wallets(
+            tokens
+          )
+        `)
+        .eq('id', user.id)
+        .single();
 
-        if (profileError) {
-          console.error('Error fetching profile:', profileError);
-        } else {
-          setProfile({
-            ...profileData,
-            tokens: profileData.wallet?.tokens
-          });
-          setEditedProfile({
-            ...profileData,
-            tokens: profileData.wallet?.tokens
-          });
-        }
-
-        // Fetch enrolled courses
-        const { data: coursesData, error: coursesError } = await supabase
-          .from('course_enrollments')
-          .select(`
-            progress,
-            enrolled_at,
-            course:course_id (
-              id,
-              title,
-              description,
-              duration,
-              level,
-              thumbnail_url,
-              category
-            )
-          `)
-          .eq('user_id', user.id)
-          .order('enrolled_at', { ascending: false });
-
-        if (coursesError) {
-          console.error('Error fetching enrolled courses:', coursesError);
-        } else {
-          setEnrolledCourses(coursesData || []);
-        }
-
-        // Fetch badges
-        const { data: badgesData, error: badgesError } = await supabase
-          .from('user_badges')
-          .select(`
-            awarded_at,
-            badge:badge_id(
-              id,
-              name,
-              description,
-              image_url
-            )
-          `)
-          .eq('user_id', user.id);
-
-        if (badgesError) {
-          console.error('Error fetching badges:', badgesError);
-        } else {
-          setBadges(badgesData || []);
-        }
-
-        // Fetch tokens
-        const { data: walletData, error: walletError } = await supabase
-          .from('user_wallets')
-          .select('tokens')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (walletError) {
-          console.error('Error fetching tokens:', walletError);
-        } else {
-          setTokens(walletData?.tokens || 0);
-          if (editedProfile) {
-            setEditedProfile(prev => ({ ...prev, tokens: walletData?.tokens || 0 }));
-          }
-        }
-      } catch (error) {
-        console.error('Error:', error);
-      } finally {
-        setLoading(false);
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+      } else {
+        setProfile({
+          ...profileData,
+          tokens: profileData.wallet?.tokens
+        });
+        setEditedProfile({
+          ...profileData,
+          tokens: profileData.wallet?.tokens
+        });
       }
-    }
 
+      // Fetch enrolled courses
+      const { data: coursesData, error: coursesError } = await supabase
+        .from('course_enrollments')
+        .select(`
+          progress,
+          enrolled_at,
+          course:course_id (
+            id,
+            title,
+            description,
+            duration,
+            level,
+            thumbnail_url,
+            category
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('enrolled_at', { ascending: false });
+
+      if (coursesError) {
+        console.error('Error fetching enrolled courses:', coursesError);
+      } else {
+        setEnrolledCourses(coursesData || []);
+      }
+
+      // Fetch badges
+      const { data: badgesData, error: badgesError } = await supabase
+        .from('user_badges')
+        .select(`
+          awarded_at,
+          badge:badge_id(
+            id,
+            name,
+            description,
+            image_url
+          )
+        `)
+        .eq('user_id', user.id);
+
+      if (badgesError) {
+        console.error('Error fetching badges:', badgesError);
+      } else {
+        setBadges(badgesData || []);
+      }
+
+      // Fetch tokens
+      const { data: walletData, error: walletError } = await supabase
+        .from('user_wallets')
+        .select('tokens')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (walletError) {
+        console.error('Error fetching tokens:', walletError);
+      } else {
+        setTokens(walletData?.tokens || 0);
+        if (editedProfile) {
+          setEditedProfile(prev => ({ ...prev, tokens: walletData?.tokens || 0 }));
+        }
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchProfileAndCourses();
   }, [user]);
 
@@ -231,8 +244,12 @@ export default function Profile() {
 
       setProfile(editedProfile);
       setEditing(false);
-    } catch (error) {
+      setSuccess('Profile updated successfully!');
+      setTimeout(() => setSuccess(null), 5000);
+    } catch (error: any) {
       console.error('Error updating profile:', error);
+      setError(error.message || 'Failed to update profile');
+      setTimeout(() => setError(null), 5000);
     } finally {
       setSaving(false);
     }
@@ -258,6 +275,24 @@ export default function Profile() {
 
   return (
     <div className="max-w-4xl mx-auto p-4">
+      {error && (
+        <div className="mb-4 bg-red-50 border-l-4 border-red-400 p-4">
+          <div className="flex">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <p className="ml-3 text-red-700">{error}</p>
+          </div>
+        </div>
+      )}
+
+      {success && (
+        <div className="mb-4 bg-green-50 border-l-4 border-green-400 p-4">
+          <div className="flex">
+            <Check className="h-5 w-5 text-green-400" />
+            <p className="ml-3 text-green-700">{success}</p>
+          </div>
+        </div>
+      )}
+
       {/* Profile Header */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
         <div className="h-32 bg-gradient-to-r from-blue-600 to-blue-800"></div>
