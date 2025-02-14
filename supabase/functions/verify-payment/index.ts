@@ -63,8 +63,10 @@ Deno.serve(async (req) => {
       httpClient: Stripe.createFetchHttpClient(),
     });
 
-    // Retrieve the session
-    const session = await stripe.checkout.sessions.retrieve(session_id);
+    // Retrieve the session with line items
+    const session = await stripe.checkout.sessions.retrieve(session_id, {
+      expand: ['line_items', 'payment_intent']
+    });
 
     // Verify the payment was successful
     if (session.payment_status !== 'paid') {
@@ -79,24 +81,58 @@ Deno.serve(async (req) => {
     // Get the number of tokens from metadata
     const tokens = parseInt(session.metadata.tokens, 10);
 
-    // Create a payment transaction record
-    const { error: transactionError } = await supabaseClient
-      .from('payment_transactions')
-      .insert({
-        user_id,
-        amount: tokens,
-        status: 'success',
-        stripe_checkout_id: session_id
-      });
+    // Calculate the total amount paid
+    const amountPaid = session.amount_total ? session.amount_total / 100 : tokens; // Convert from cents to dollars
 
-    if (transactionError) {
-      console.error('Error creating transaction record:', transactionError);
+    try {
+      // Create a payment transaction record
+      const { error: transactionError } = await supabaseClient
+        .from('payment_transactions')
+        .insert({
+          user_id,
+          amount: amountPaid,
+          transaction_time: new Date().toISOString(),
+          status: 'success',
+          stripe_checkout_id: session_id
+        });
+
+      if (transactionError) {
+        console.error('Error creating transaction record:', transactionError);
+        throw transactionError;
+      }
+
+      // Update user's wallet
+      const { data: walletData, error: walletError } = await supabaseClient
+        .from('user_wallets')
+        .select('tokens')
+        .eq('user_id', user_id)
+        .maybeSingle();
+
+      if (walletError) throw walletError;
+
+      const currentTokens = walletData?.tokens || 0;
+      const newTokens = currentTokens + tokens;
+
+      const { error: updateError } = await supabaseClient
+        .from('user_wallets')
+        .upsert({ 
+          user_id: user_id,
+          tokens: newTokens,
+          updated_at: new Date().toISOString()
+        });
+
+      if (updateError) throw updateError;
+
+    } catch (dbError) {
+      console.error('Database error:', dbError);
+      throw new Error('Failed to update transaction records');
     }
 
     return new Response(
       JSON.stringify({ 
         success: true,
         tokens,
+        amount: amountPaid
       }),
       {
         status: 200,
