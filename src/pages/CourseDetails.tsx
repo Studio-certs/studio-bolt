@@ -156,7 +156,8 @@ export default function CourseDetails() {
       }
 
       if (userTokens < course.price) {
-        setError('Insufficient tokens. Please purchase more tokens to enroll.');
+        // Instead of showing error, redirect to buy tokens page
+        navigate('/buy-tokens');
         return;
       }
 

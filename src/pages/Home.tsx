@@ -19,7 +19,6 @@ interface NewsArticle {
   publish_date: string;
   thumbnail_url: string;
   category: string;
-  likes: number;
   read_time: number;
 }
 
@@ -258,57 +257,75 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Article Modal */}
+      {/* Enhanced Article Modal */}
       {selectedArticle && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold">{selectedArticle.title}</h2>
-              <button
-                onClick={() => setSelectedArticle(null)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="px-6 py-4">
-              {selectedArticle.thumbnail_url && (
-                <img
-                  src={selectedArticle.thumbnail_url}
-                  alt={selectedArticle.title}
-                  className="w-full h-64 object-cover rounded-lg mb-4"
-                />
-              )}
-              <div className="flex items-center mb-4">
-                <img
-                  src={selectedArticle.author.avatar_url || 'https://via.placeholder.com/40'}
-                  alt={selectedArticle.author.full_name}
-                  className="w-10 h-10 rounded-full mr-3"
-                />
-                <div>
-                  <p className="font-semibold">{selectedArticle.author.full_name}</p>
-                  <p className="text-sm text-gray-500">
-                    {format(new Date(selectedArticle.publish_date), 'MMMM d, yyyy')}
+        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            {/* Background overlay */}
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+
+            {/* Modal panel */}
+            <div className="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+              {/* Modal header with image */}
+              <div className="relative">
+                {selectedArticle.thumbnail_url && (
+                  <div className="relative h-64 w-full">
+                    <img
+                      src={selectedArticle.thumbnail_url}
+                      alt={selectedArticle.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                  </div>
+                )}
+                
+                {/* Close button */}
+                <button
+                  onClick={() => setSelectedArticle(null)}
+                  className="absolute top-4 right-4 p-2 bg-white/10 backdrop-blur-sm rounded-full hover:bg-white/20 transition-colors"
+                >
+                  <X className="w-5 h-5 text-white" />
+                </button>
+
+                {/* Category badge */}
+                <div className="absolute top-4 left-4">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                    {selectedArticle.category}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-6">
+                {/* Title and author info */}
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">{selectedArticle.title}</h2>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <img
+                        src={selectedArticle.author.avatar_url || 'https://via.placeholder.com/40'}
+                        alt={selectedArticle.author.full_name}
+                        className="w-10 h-10 rounded-full mr-3"
+                      />
+                      <div>
+                        <p className="font-medium text-gray-900">{selectedArticle.author.full_name}</p>
+                        <p className="text-sm text-gray-500">
+                          {format(new Date(selectedArticle.publish_date), 'MMMM d, yyyy')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center text-gray-500">
+                      <Clock className="w-4 h-4 mr-1" />
+                      <span className="text-sm">{selectedArticle.read_time} min read</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Article content */}
+                <div className="prose max-w-none">
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                    {selectedArticle.content}
                   </p>
                 </div>
-              </div>
-              <div className="prose max-w-none">
-                <p className="whitespace-pre-wrap">{selectedArticle.content}</p>
-              </div>
-              <div className="mt-6 flex items-center justify-between text-sm text-gray-500">
-                <div className="flex items-center space-x-4">
-                  <span className="flex items-center">
-                    <Clock className="w-4 h-4 mr-1" />
-                    {selectedArticle.read_time} min read
-                  </span>
-                  <span className="flex items-center">
-                    <ThumbsUp className="w-4 h-4 mr-1" />
-                    {selectedArticle.likes} likes
-                  </span>
-                </div>
-                <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-medium">
-                  {selectedArticle.category}
-                </span>
               </div>
             </div>
           </div>
