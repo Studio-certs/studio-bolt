@@ -6,7 +6,6 @@ import type { User } from '../../../types/crm';
 interface EmailDialogProps {
   selectedUsers: User[];
   onClose: () => void;
-  onSend: (subject: string, content: string) => Promise<void>;
 }
 
 export default function EmailDialog({ selectedUsers, onClose }: EmailDialogProps) {
@@ -17,7 +16,6 @@ export default function EmailDialog({ selectedUsers, onClose }: EmailDialogProps
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    // Initialize EmailJS with public key
     emailjs.init(import.meta.env.VITE_EMAILJS_PUBLIC_KEY || "AHVYVDNmQfUG44rJR");
   }, []);
 
@@ -27,7 +25,6 @@ export default function EmailDialog({ selectedUsers, onClose }: EmailDialogProps
       return;
     }
 
-    // Validate that all users have email addresses
     const missingEmails = selectedUsers.filter(user => !user.email);
     if (missingEmails.length > 0) {
       setError('Some users are missing email addresses');
@@ -38,15 +35,14 @@ export default function EmailDialog({ selectedUsers, onClose }: EmailDialogProps
     setError(null);
 
     try {
-      // Send email to each selected user
       for (const user of selectedUsers) {
-        if (!user.email) continue; // Skip users without email (shouldn't happen due to validation)
+        if (!user.email) continue;
 
         const templateParams = {
           to_name: user.full_name,
           to_email: user.email,
           subject: emailSubject,
-          message: emailContent,
+          message: emailContent
         };
 
         await emailjs.send(
@@ -124,6 +120,7 @@ export default function EmailDialog({ selectedUsers, onClose }: EmailDialogProps
                   onChange={(e) => setEmailContent(e.target.value)}
                   rows={6}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter your message here..."
                 ></textarea>
               </div>
               <div className="flex justify-end space-x-3">
