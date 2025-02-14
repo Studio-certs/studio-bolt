@@ -5,12 +5,11 @@ import UserAvatar from '../../../components/UserAvatar';
 
 interface UserListProps {
   users: User[];
-  selectedUsers: string[];
+  selectedUserId: string | null;
   onUserSelect: (userId: string) => void;
-  onSelectAll: () => void;
 }
 
-export default function UserList({ users, selectedUsers, onUserSelect, onSelectAll }: UserListProps) {
+export default function UserList({ users, selectedUserId, onUserSelect }: UserListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
   const [filterProgress, setFilterProgress] = useState('all');
@@ -122,16 +121,7 @@ export default function UserList({ users, selectedUsers, onUserSelect, onSelectA
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left">
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={selectedUsers.length === filteredUsers.length}
-                      onChange={onSelectAll}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                  </div>
-                </th>
+                <th scope="col" className="px-6 py-3 text-left w-10"></th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
@@ -190,7 +180,7 @@ export default function UserList({ users, selectedUsers, onUserSelect, onSelectA
                   <td className="px-6 py-4 whitespace-nowrap">
                     <input
                       type="checkbox"
-                      checked={selectedUsers.includes(user.id)}
+                      checked={selectedUserId === user.id}
                       onChange={() => onUserSelect(user.id)}
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
