@@ -12,6 +12,7 @@
     "deploy": "vite build && cp _redirects dist"
   },
   "dependencies": {
+    "@emailjs/browser": "^4.1.0",
     "@stripe/react-stripe-js": "^3.1.1",
     "@stripe/stripe-js": "^5.6.0",
     "@supabase/supabase-js": "^2.39.7",

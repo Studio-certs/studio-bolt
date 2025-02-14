@@ -44,10 +44,13 @@ export default function UserManagement() {
         `);
 
       if (profilesError) throw profilesError;
-      setUsers(profiles?.map(profile => ({
+
+      const usersWithData = profiles?.map(profile => ({
         ...profile,
         tokens: profile.wallet?.tokens
-      })) || []);
+      })) || [];
+      
+      setUsers(usersWithData);
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
@@ -57,11 +60,9 @@ export default function UserManagement() {
 
   const handleUserSelection = (userId: string) => {
     if (selectedUserId === userId) {
-      // Unselect the user
       setSelectedUserId(null);
       setSelectedUser(null);
     } else {
-      // Select the new user
       setSelectedUserId(userId);
       const user = users.find(user => user.id === userId);
       setSelectedUser(user || null);
@@ -92,7 +93,7 @@ export default function UserManagement() {
           <h2 className="text-xl font-semibold">User Management</h2>
           <button
             onClick={() => setShowEmailDialog(true)}
-            disabled={!selectedUserId}
+            disabled={!selectedUserId || !selectedUserObject?.email}
             className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
           >
             <Mail className="w-4 h-4 mr-2" />
@@ -129,7 +130,7 @@ export default function UserManagement() {
         onUserSelect={handleUserSelection}
       />
 
-      {showEmailDialog && selectedUserObject && (
+      {showEmailDialog && selectedUserObject && selectedUserObject.email && (
         <EmailDialog
           selectedUsers={[selectedUserObject]}
           onClose={() => setShowEmailDialog(false)}

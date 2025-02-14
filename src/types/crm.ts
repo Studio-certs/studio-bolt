@@ -6,6 +6,7 @@ export interface User {
   headline: string;
   location: string;
   created_at: string;
+  email?: string;
   enrollments: {
     course: {
       title: string;
