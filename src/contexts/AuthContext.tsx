@@ -104,8 +104,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    try {
+      // First check if we have a valid session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        // If no session exists, just clear the local state
+        setUser(null);
+        setIsAdmin(false);
+        return;
+      }
+
+      // If we have a valid session, proceed with sign out
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+    } catch (error: any) {
+      // If the error is related to missing session, we can safely ignore it
+      if (error.name === 'AuthSessionMissingError' || error.message?.includes('session_not_found')) {
+        setUser(null);
+        setIsAdmin(false);
+        return;
+      }
+      // For other errors, we should still throw them
+      throw error;
+    }
   };
 
   const value = {
