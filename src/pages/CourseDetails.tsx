@@ -6,6 +6,7 @@ import {
   Clock, BookOpen, Play, FileText, HelpCircle, Check, ChevronLeft, ChevronRight,
   AlertCircle, Users, Star, GraduationCap, Wallet, BookMarked
 } from 'lucide-react';
+import UserAvatar from '../components/UserAvatar';
 
 interface Course {
   id: string;
@@ -304,10 +305,10 @@ export default function CourseDetails() {
             <div className="bg-white rounded-xl shadow-sm p-6">
               <h2 className="text-2xl font-bold mb-4">Instructor</h2>
               <div className="flex items-start space-x-4">
-                <img
-                  src={course.instructor.avatar_url || 'https://via.placeholder.com/100'}
+                <UserAvatar
+                  src={course.instructor.avatar_url}
                   alt={course.instructor.full_name}
-                  className="w-16 h-16 rounded-full"
+                  size="lg"
                 />
                 <div>
                   <h3 className="text-lg font-semibold">{course.instructor.full_name}</h3>

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import ImageUpload from '../components/ImageUpload';
+import UserAvatar from '../components/UserAvatar';
 
 interface UserProfile {
   id: string;
@@ -300,10 +301,11 @@ export default function Profile() {
           <div className="relative px-8 pb-8">
             <div className="flex flex-col md:flex-row md:items-end md:space-x-6">
               <div className="relative -mt-24">
-                <img
-                  src={editing ? editedProfile.avatar_url || 'https://via.placeholder.com/150' : profile.avatar_url || 'https://via.placeholder.com/150'}
+                <UserAvatar
+                  src={editing ? editedProfile.avatar_url : profile.avatar_url}
                   alt={profile.full_name}
-                  className="w-40 h-40 rounded-xl border-4 border-white shadow-lg object-cover"
+                  size="xl"
+                  className="border-4 border-white shadow-lg"
                 />
                 {editing && (
                   <div className="absolute inset-0 flex items-center justify-center">

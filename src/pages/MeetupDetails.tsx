@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { Calendar, MapPin, Users, Clock, ChevronLeft, AlertCircle, Check } from 'lucide-react';
 import { format } from 'date-fns';
+import UserAvatar from '../components/UserAvatar';
 
 interface Meetup {
   id: string;
@@ -252,10 +253,10 @@ export default function MeetupDetails() {
             <div className="bg-white rounded-xl shadow-sm p-6">
               <h2 className="text-2xl font-bold mb-4">Organizer</h2>
               <div className="flex items-start space-x-4">
-                <img
-                  src={meetup.organizer.avatar_url || 'https://via.placeholder.com/100'}
+                <UserAvatar
+                  src={meetup.organizer.avatar_url}
                   alt={meetup.organizer.full_name}
-                  className="w-16 h-16 rounded-full"
+                  size="lg"
                 />
                 <div>
                   <h3 className="text-lg font-semibold">{meetup.organizer.full_name}</h3>
@@ -280,10 +281,10 @@ export default function MeetupDetails() {
                     key={attendee.user_id}
                     className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg"
                   >
-                    <img
-                      src={attendee.profile.avatar_url || 'https://via.placeholder.com/40'}
+                    <UserAvatar
+                      src={attendee.profile.avatar_url}
                       alt={attendee.profile.full_name}
-                      className="w-10 h-10 rounded-full"
+                      size="sm"
                     />
                     <div>
                       <div className="font-medium">{attendee.profile.full_name}</div>

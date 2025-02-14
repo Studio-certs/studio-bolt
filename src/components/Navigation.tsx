@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Home, Users, BookOpen, User, LogOut, GraduationCap } from 'lucide-react';
+import UserAvatar from './UserAvatar';
 
 export default function Navigation() {
   const { user, isAdmin, signOut } = useAuth();
@@ -22,10 +23,10 @@ export default function Navigation() {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center">
-              <img
+              <UserAvatar
                 src="https://studio-bucket.s3-ap-southeast-2.amazonaws.com/image/profilePicture/original/Profile_hksQdQJp7c64.png"
                 alt="Logo"
-                className="h-8 mr-2"
+                size="sm"
               />
             </Link>
             <div className="flex items-center space-x-4">
