@@ -232,23 +232,17 @@ export default function MyLearning() {
           </div>
         </div>
 
-        {/* Course Grid */}
-        {filteredCourses.length === 0 ? (
+        {enrolledCourses.length === 0 ? (
+          <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+            <BookMarked className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">No courses yet</h3>
+            <p className="text-gray-600">Start your learning journey by enrolling in a course</p>
+          </div>
+        ) : filteredCourses.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm p-12 text-center">
             <BookMarked className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 mb-2">No courses found</h3>
-            <p className="text-gray-600 mb-6">
-              {enrolledCourses.length === 0
-                ? "You haven't enrolled in any courses yet."
-                : "No courses match your search criteria."}
-            </p>
-            <Link
-              to="/courses"
-              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
-            >
-              Browse Available Courses
-              <ChevronRight className="ml-2 -mr-1 w-5 h-5" />
-            </Link>
+            <p className="text-gray-600">No courses match your search criteria.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
