@@ -18,54 +18,68 @@ export default function Navigation() {
 
   return (
     <>
-      {/* Top navigation for desktop */}
+      {/* Top navigation */}
       <nav className="fixed top-0 left-0 right-0 bg-white shadow-sm z-50">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
-            <Link to="/" className="flex items-center">
-              <UserAvatar
-                src="https://studio-bucket.s3-ap-southeast-2.amazonaws.com/image/profilePicture/original/Profile_hksQdQJp7c64.png"
-                alt="Logo"
-                size="sm"
-              />
-            </Link>
-            <div className="flex items-center space-x-4">
-              {user ? (
-                <>
-                  <Link 
-                    to="/my-learning"
-                    className="text-gray-600 hover:text-gray-900 flex items-center"
-                  >
-                    <GraduationCap className="w-4 h-4 mr-1" />
-                    My Learning
-                  </Link>
-                  <Link 
-                    to="/meetups"
-                    className="text-gray-600 hover:text-gray-900 flex items-center"
-                  >
-                    <Users className="w-4 h-4 mr-1" />
-                    Meetups
-                  </Link>
-                  <Link to="/profile" className="text-gray-600 hover:text-gray-900">Profile</Link>
-                  {isAdmin && (
-                    <Link to="/admin" className="text-gray-600 hover:text-gray-900">Admin</Link>
-                  )}
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center text-gray-600 hover:text-gray-900"
-                  >
-                    <LogOut className="w-4 h-4 mr-1" />
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link to="/" className={`text-gray-600 hover:text-gray-900 ${location.pathname === '/' ? 'font-medium' : ''}`}>Home</Link>
-                  <Link to="/meetups" className={`text-gray-600 hover:text-gray-900 ${location.pathname.startsWith('/meetups') ? 'font-medium' : ''}`}>Meetups</Link>
-                  <Link to="/courses" className={`text-gray-600 hover:text-gray-900 ${location.pathname.startsWith('/courses') ? 'font-medium' : ''}`}>Courses</Link>
-                  <Link to="/login" className="text-gray-600 hover:text-gray-900">Login</Link>
-                </>
-              )}
+            {/* Mobile: Only Logo */}
+            <div className="md:hidden w-full flex justify-center">
+              <Link to="/" className="flex items-center">
+                <UserAvatar
+                  src="https://studio-bucket.s3-ap-southeast-2.amazonaws.com/image/profilePicture/original/Profile_hksQdQJp7c64.png"
+                  alt="Logo"
+                  size="sm"
+                />
+              </Link>
+            </div>
+
+            {/* Desktop: Logo and Navigation */}
+            <div className="hidden md:flex items-center justify-between w-full">
+              <Link to="/" className="flex items-center">
+                <UserAvatar
+                  src="https://studio-bucket.s3-ap-southeast-2.amazonaws.com/image/profilePicture/original/Profile_hksQdQJp7c64.png"
+                  alt="Logo"
+                  size="sm"
+                />
+              </Link>
+              <div className="flex items-center space-x-4">
+                {user ? (
+                  <>
+                    <Link 
+                      to="/my-learning"
+                      className="text-gray-600 hover:text-gray-900 flex items-center"
+                    >
+                      <GraduationCap className="w-4 h-4 mr-1" />
+                      My Learning
+                    </Link>
+                    <Link 
+                      to="/meetups"
+                      className="text-gray-600 hover:text-gray-900 flex items-center"
+                    >
+                      <Users className="w-4 h-4 mr-1" />
+                      Meetups
+                    </Link>
+                    <Link to="/profile" className="text-gray-600 hover:text-gray-900">Profile</Link>
+                    {isAdmin && (
+                      <Link to="/admin" className="text-gray-600 hover:text-gray-900">Admin</Link>
+                    )}
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center text-gray-600 hover:text-gray-900"
+                    >
+                      <LogOut className="w-4 h-4 mr-1" />
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/" className={`text-gray-600 hover:text-gray-900 ${location.pathname === '/' ? 'font-medium' : ''}`}>Home</Link>
+                    <Link to="/meetups" className={`text-gray-600 hover:text-gray-900 ${location.pathname.startsWith('/meetups') ? 'font-medium' : ''}`}>Meetups</Link>
+                    <Link to="/courses" className={`text-gray-600 hover:text-gray-900 ${location.pathname.startsWith('/courses') ? 'font-medium' : ''}`}>Courses</Link>
+                    <Link to="/login" className="text-gray-600 hover:text-gray-900">Login</Link>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
