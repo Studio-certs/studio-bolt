@@ -1,12 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Wallet, AlertCircle } from 'lucide-react';
+import { Wallet, AlertCircle, Shield, CreditCard, Zap, CheckCircle2, Gift } from 'lucide-react';
 
-const tokenAmounts = [10, 50, 100, 150, 200, 250];
+const tokenPackages = [
+  { amount: 10, label: 'Starter', description: 'Perfect for trying out our platform', icon: Zap },
+  { amount: 50, label: 'Basic', description: 'Most popular for beginners', icon: Shield, featured: true },
+  { amount: 100, label: 'Pro', description: 'Great value for active learners', icon: Gift },
+  { amount: 150, label: 'Elite', description: 'Ideal for dedicated students', icon: CreditCard },
+  { amount: 200, label: 'Premium', description: 'Best value for serious learners', icon: CheckCircle2 },
+  { amount: 250, label: 'Ultimate', description: 'Maximum learning potential', icon: Wallet }
+];
+
+const features = [
+  {
+    icon: Shield,
+    title: 'Secure Payments',
+    description: 'Your transactions are protected with bank-level security'
+  },
+  {
+    icon: Zap,
+    title: 'Instant Access',
+    description: 'Tokens are added to your account immediately'
+  },
+  {
+    icon: Gift,
+    title: 'Flexible Packages',
+    description: 'Choose the amount that fits your needs'
+  }
+];
 
 export default function BuyTokens() {
-  const [amount, setAmount] = useState(10);
+  const [amount, setAmount] = useState(50); // Default to the featured package
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { user, supabase } = useAuth();
@@ -46,7 +71,6 @@ export default function BuyTokens() {
         throw new Error('Invalid response from payment service');
       }
 
-      // Redirect to Stripe Checkout
       window.location.href = url;
     } catch (err: any) {
       console.error('Payment setup error:', err);
@@ -73,68 +97,97 @@ export default function BuyTokens() {
   }
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-xl">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Top Up Your Wallet
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Securely purchase tokens to unlock premium content and features
+    <div className="min-h-[80vh] bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header Section */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-extrabold text-gray-900 mb-4">
+            Power Up Your Learning Journey
+          </h1>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            Purchase tokens to unlock premium courses and accelerate your learning experience
           </p>
         </div>
 
         {error && (
-          <div className="bg-red-50 border-l-4 border-red-400 p-4">
+          <div className="max-w-md mx-auto mb-8 bg-red-50 border-l-4 border-red-400 p-4">
             <div className="flex">
-              <div className="flex-shrink-0">
-                <AlertCircle className="h-5 w-5 text-red-400" />
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-red-700">{error}</p>
-              </div>
+              <AlertCircle className="h-5 w-5 text-red-400" />
+              <p className="ml-3 text-red-700">{error}</p>
             </div>
           </div>
         )}
 
-        <div className="flex items-center justify-center mb-4">
-          <Wallet className="w-10 h-10 text-yellow-500 mr-2" />
-          <p className="text-xl font-semibold">1 Token = 1 AUD</p>
+        {/* Token Packages Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+          {tokenPackages.map((pkg) => (
+            <div
+              key={pkg.amount}
+              onClick={() => setAmount(pkg.amount)}
+              className={`relative bg-white rounded-2xl shadow-lg transition-all duration-300 hover:shadow-xl cursor-pointer transform hover:-translate-y-1 ${
+                amount === pkg.amount ? 'ring-2 ring-blue-500' : ''
+              } ${pkg.featured ? 'md:scale-105' : ''}`}
+            >
+              {pkg.featured && (
+                <div className="absolute top-0 right-0 bg-blue-500 text-white px-4 py-1 rounded-tr-lg rounded-bl-lg text-sm font-medium">
+                  Popular Choice
+                </div>
+              )}
+              <div className="p-8">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">{pkg.label}</h3>
+                    <p className="text-gray-500">{pkg.description}</p>
+                  </div>
+                  <pkg.icon className={`w-8 h-8 ${amount === pkg.amount ? 'text-blue-500' : 'text-gray-400'}`} />
+                </div>
+                <div className="mt-4">
+                  <p className="text-3xl font-bold text-gray-900">{pkg.amount} <span className="text-lg font-normal text-gray-500">tokens</span></p>
+                  <p className="text-gray-500">${pkg.amount} AUD</p>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
 
-        <div className="space-y-4">
-          <label className="block text-sm font-medium text-gray-700">Choose Token Amount</label>
-          <div className="grid grid-cols-3 gap-3">
-            {tokenAmounts.map(tokenAmount => (
-              <button
-                key={tokenAmount}
-                onClick={() => setAmount(tokenAmount)}
-                className={`group relative w-full flex justify-center py-2 px-4 border rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                  amount === tokenAmount
-                    ? 'bg-blue-600 text-white hover:bg-blue-700'
-                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                {tokenAmount}
-              </button>
+        {/* Features Section */}
+        <div className="max-w-4xl mx-auto mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {features.map((feature, index) => (
+              <div key={index} className="flex flex-col items-center text-center">
+                <div className="bg-blue-100 p-3 rounded-full mb-4">
+                  <feature.icon className="w-6 h-6 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
+                <p className="text-gray-600">{feature.description}</p>
+              </div>
             ))}
           </div>
         </div>
 
-        <div className="text-center">
-          <p className="text-gray-600 text-sm">
-            You are purchasing <span className="font-semibold">{amount}</span> tokens for{' '}
-            <span className="font-semibold">{amount} AUD</span>
+        {/* Purchase Button */}
+        <div className="max-w-md mx-auto text-center">
+          <button
+            onClick={handlePurchase}
+            disabled={loading}
+            className="w-full flex items-center justify-center py-3 px-8 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+          >
+            {loading ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                Processing...
+              </>
+            ) : (
+              <>
+                <CreditCard className="w-5 h-5 mr-2" />
+                Purchase {amount} Tokens for ${amount}
+              </>
+            )}
+          </button>
+          <p className="mt-4 text-sm text-gray-500">
+            By proceeding with the purchase, you agree to our terms and conditions
           </p>
         </div>
-
-        <button
-          onClick={handlePurchase}
-          disabled={loading}
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-        >
-          {loading ? 'Processing...' : 'Proceed to Checkout'}
-        </button>
       </div>
     </div>
   );
