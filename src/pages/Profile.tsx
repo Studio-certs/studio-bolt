@@ -32,7 +32,7 @@ interface UserProfile {
     };
     awarded_at: string;
   }[];
-  tokens?: number;
+  created_at: string;
 }
 
 interface EnrolledCourse {
@@ -122,26 +122,15 @@ export default function Profile() {
       // Fetch profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select(`
-          *,
-          wallet:user_wallets(
-            tokens
-          )
-        `)
+        .select('*')
         .eq('id', user.id)
         .single();
 
       if (profileError) {
         console.error('Error fetching profile:', profileError);
       } else {
-        setProfile({
-          ...profileData,
-          tokens: profileData.wallet?.tokens
-        });
-        setEditedProfile({
-          ...profileData,
-          tokens: profileData.wallet?.tokens
-        });
+        setProfile(profileData);
+        setEditedProfile(profileData);
       }
 
       // Fetch enrolled courses
@@ -200,9 +189,6 @@ export default function Profile() {
         console.error('Error fetching tokens:', walletError);
       } else {
         setTokens(walletData?.tokens || 0);
-        if (editedProfile) {
-          setEditedProfile(prev => ({ ...prev, tokens: walletData?.tokens || 0 }));
-        }
       }
     } catch (error) {
       console.error('Error:', error);
