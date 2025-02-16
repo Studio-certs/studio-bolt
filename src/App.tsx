@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
+import PublicProfile from './pages/PublicProfile';
 import Meetups from './pages/Meetups';
 import MeetupDetails from './pages/MeetupDetails';
 import Courses from './pages/Courses';
@@ -36,6 +37,7 @@ export default function App() {
                   <Profile />
                 </ProtectedRoute>
               } />
+              <Route path="/profile/:id" element={<PublicProfile />} />
               <Route path="/buy-tokens" element={
                 <ProtectedRoute>
                   <BuyTokens />

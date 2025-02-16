@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { 
   BookOpen, Clock, Award, MapPin, Globe, Linkedin, Github, Twitter, 
   Edit2, X, Check, Camera, Wallet, PlusCircle, AlertCircle, Briefcase,
-  Mail, Calendar, ChevronRight, Star, BookMarked, GraduationCap
+  Mail, Calendar, ChevronRight, Star, BookMarked, GraduationCap, Share2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import ImageUpload from '../components/ImageUpload';
@@ -65,6 +65,7 @@ export default function Profile() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'courses' | 'badges'>('overview');
+  const [showShareTooltip, setShowShareTooltip] = useState(false);
 
   useEffect(() => {
     if (sessionId && user) {
@@ -232,6 +233,13 @@ export default function Profile() {
     }
   };
 
+  const handleShareProfile = () => {
+    const shareUrl = `${window.location.origin}/profile/${user?.id}`;
+    navigator.clipboard.writeText(shareUrl);
+    setShowShareTooltip(true);
+    setTimeout(() => setShowShareTooltip(false), 2000);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -268,21 +276,37 @@ export default function Profile() {
             </div>
           </div>
         )}
+        {showShareTooltip && (
+          <div className="bg-gray-800 text-white px-4 py-2 rounded shadow-lg animate-fade-in">
+            Profile link copied to clipboard!
+          </div>
+        )}
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Profile Header */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
           <div className="h-48 bg-gradient-to-r from-blue-500 to-indigo-600 relative">
-            {!editing && (
-              <button
-                onClick={() => setEditing(true)}
-                className="absolute top-4 right-4 bg-white/10 backdrop-blur-sm text-white px-4 py-2 rounded-lg flex items-center hover:bg-white/20 transition-colors"
-              >
-                <Edit2 className="w-4 h-4 mr-2" />
-                Edit Profile
-              </button>
-            )}
+            <div className="absolute top-4 right-4 flex space-x-2">
+              {!editing && (
+                <>
+                  <button
+                    onClick={handleShareProfile}
+                    className="bg-white/10 backdrop-blur-sm text-white px-4 py-2 rounded-lg flex items-center hover:bg-white/20 transition-colors"
+                  >
+                    <Share2 className="w-4 h-4 mr-2" />
+                    Share Profile
+                  </button>
+                  <button
+                    onClick={() => setEditing(true)}
+                    className="bg-white/10 backdrop-blur-sm text-white px-4 py-2 rounded-lg flex items-center hover:bg-white/20 transition-colors"
+                  >
+                    <Edit2 className="w-4 h-4 mr-2" />
+                    Edit Profile
+                  </button>
+                </>
+              )}
+            </div>
           </div>
           <div className="relative px-8 pb-8">
             <div className="flex flex-col md:flex-row md:items-end md:space-x-6">
