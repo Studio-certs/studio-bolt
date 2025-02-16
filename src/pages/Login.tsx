@@ -20,8 +20,13 @@ export default function Login() {
       setLoading(true);
       await signIn(email, password);
       navigate('/');
-    } catch (err) {
-      setError('Failed to sign in');
+    } catch (err: any) {
+      // Check if the error message is about blocked account
+      if (err.message?.includes('blocked')) {
+        setError('Your account has been blocked. Please contact support for assistance.');
+      } else {
+        setError('Invalid email or password');
+      }
       console.error(err);
     } finally {
       setLoading(false);

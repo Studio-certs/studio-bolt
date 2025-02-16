@@ -48,11 +48,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, blocked')
         .eq('id', userId)
         .maybeSingle();
 
       if (error) throw error;
+
+      // If user is blocked, sign them out
+      if (data?.blocked) {
+        await signOut();
+        throw new Error('Your account has been blocked. Please contact support.');
+      }
+
       setIsAdmin(data?.role === 'admin' || false);
     } catch (error) {
       console.error('Error checking user role:', error);
@@ -63,11 +70,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signIn = async (email: string, password: string) => {
+    // First check if the email is blocked
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('blocked')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (profileError) throw profileError;
+
+    if (profile?.blocked) {
+      throw new Error('This account has been blocked. Please contact support.');
+    }
+
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
   };
 
   const signUp = async (email: string, password: string, fullName: string) => {
+    // Check if email is blocked
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('blocked')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (profileError) throw profileError;
+
+    if (profile?.blocked) {
+      throw new Error('This email address has been blocked. Please contact support.');
+    }
+
     try {
       const response = await supabase.auth.signUp({
         email,

@@ -7,6 +7,7 @@ export interface User {
   location: string;
   created_at: string;
   email?: string;
+  blocked?: boolean;
   enrollments: {
     course: {
       title: string;

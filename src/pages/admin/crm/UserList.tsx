@@ -1,74 +1,103 @@
 import React, { useState } from 'react';
-import { Search, Filter, ChevronDown } from 'lucide-react';
+import { Search, Filter, ChevronDown, Ban } from 'lucide-react';
 import type { User } from '../../../types/crm';
 import UserAvatar from '../../../components/UserAvatar';
+import { supabase } from '../../../lib/supabase';
 
 interface UserListProps {
   users: User[];
   selectedUserId: string | null;
   onUserSelect: (userId: string) => void;
+  onUserUpdate: () => void;
 }
 
-export default function UserList({ users, selectedUserId, onUserSelect }: UserListProps) {
+export default function UserList({ users, selectedUserId, onUserSelect, onUserUpdate }: UserListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
   const [filterProgress, setFilterProgress] = useState('all');
   const [sortBy, setSortBy] = useState<'name' | 'courses' | 'progress' | 'date' | 'tokens'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [blockingUser, setBlockingUser] = useState<string | null>(null);
 
-  const filteredUsers = users
-    .filter(user => {
-      const matchesSearch = user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          user.headline?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          user.location?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesRole = filterRole === 'all' || user.role === filterRole;
-      const averageProgress = user.enrollments?.length > 0
-        ? user.enrollments.reduce((acc, curr) => acc + curr.progress, 0) / user.enrollments.length
-        : 0;
+  const handleBlockUser = async (userId: string, currentlyBlocked: boolean) => {
+    try {
+      setBlockingUser(userId);
       
-      let matchesProgress = true;
-      if (filterProgress === 'complete') {
-        matchesProgress = averageProgress === 100;
-      } else if (filterProgress === 'in-progress') {
-        matchesProgress = averageProgress > 0 && averageProgress < 100;
-      } else if (filterProgress === 'not-started') {
-        matchesProgress = averageProgress === 0;
+      // Check if target user is an admin
+      const targetUser = users.find(u => u.id === userId);
+      if (targetUser?.role === 'admin') {
+        alert('Cannot block admin users');
+        return;
       }
 
-      return matchesSearch && matchesRole && matchesProgress;
-    })
-    .sort((a, b) => {
-      if (sortBy === 'name') {
-        return sortOrder === 'asc'
-          ? a.full_name.localeCompare(b.full_name)
-          : b.full_name.localeCompare(a.full_name);
-      }
-      if (sortBy === 'courses') {
-        return sortOrder === 'asc'
-          ? (a.enrollments?.length || 0) - (b.enrollments?.length || 0)
-          : (b.enrollments?.length || 0) - (a.enrollments?.length || 0);
-      }
-      if (sortBy === 'progress') {
-        const aProgress = a.enrollments?.length > 0
-          ? a.enrollments.reduce((acc, curr) => acc + curr.progress, 0) / a.enrollments.length
-          : 0;
-        const bProgress = b.enrollments?.length > 0
-          ? b.enrollments.reduce((acc, curr) => acc + curr.progress, 0) / b.enrollments.length
-          : 0;
-        return sortOrder === 'asc' ? aProgress - bProgress : bProgress - aProgress;
-      }
-      if (sortBy === 'date') {
-        return sortOrder === 'asc'
-          ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-          : new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      }
-      if (sortBy === 'tokens') {
-        return sortOrder === 'asc'
-          ? (a.tokens || 0) - (b.tokens || 0)
-          : (b.tokens || 0) - (a.tokens || 0);
-      }
-      return 0;
-    });
+      const { error } = await supabase
+        .from('profiles')
+        .update({ blocked: !currentlyBlocked })
+        .eq('id', userId);
+
+      if (error) throw error;
+      
+      // Refresh the user list
+      onUserUpdate();
+    } catch (error) {
+      console.error('Error toggling user block status:', error);
+      alert('Failed to update user block status');
+    } finally {
+      setBlockingUser(null);
+    }
+  };
+
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.headline?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.location?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole = filterRole === 'all' || user.role === filterRole;
+    const averageProgress = user.enrollments?.length > 0
+      ? user.enrollments.reduce((acc, curr) => acc + curr.progress, 0) / user.enrollments.length
+      : 0;
+    
+    let matchesProgress = true;
+    if (filterProgress === 'complete') {
+      matchesProgress = averageProgress === 100;
+    } else if (filterProgress === 'in-progress') {
+      matchesProgress = averageProgress > 0 && averageProgress < 100;
+    } else if (filterProgress === 'not-started') {
+      matchesProgress = averageProgress === 0;
+    }
+
+    return matchesSearch && matchesRole && matchesProgress;
+  }).sort((a, b) => {
+    if (sortBy === 'name') {
+      return sortOrder === 'asc'
+        ? a.full_name.localeCompare(b.full_name)
+        : b.full_name.localeCompare(a.full_name);
+    }
+    if (sortBy === 'courses') {
+      return sortOrder === 'asc'
+        ? (a.enrollments?.length || 0) - (b.enrollments?.length || 0)
+        : (b.enrollments?.length || 0) - (a.enrollments?.length || 0);
+    }
+    if (sortBy === 'progress') {
+      const aProgress = a.enrollments?.length > 0
+        ? a.enrollments.reduce((acc, curr) => acc + curr.progress, 0) / a.enrollments.length
+        : 0;
+      const bProgress = b.enrollments?.length > 0
+        ? b.enrollments.reduce((acc, curr) => acc + curr.progress, 0) / b.enrollments.length
+        : 0;
+      return sortOrder === 'asc' ? aProgress - bProgress : bProgress - aProgress;
+    }
+    if (sortBy === 'date') {
+      return sortOrder === 'asc'
+        ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        : new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    }
+    if (sortBy === 'tokens') {
+      return sortOrder === 'asc'
+        ? (a.tokens || 0) - (b.tokens || 0)
+        : (b.tokens || 0) - (a.tokens || 0);
+    }
+    return 0;
+  });
 
   const handleSort = (field: typeof sortBy) => {
     if (sortBy === field) {
@@ -92,8 +121,7 @@ export default function UserList({ users, selectedUserId, onUserSelect }: UserLi
             className="pl-10 pr-4 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 w-full"
           />
         </div>
-        <div className="flex items-center space-x-2 md:ml-4">
-          <Filter className="w-5 h-5 text-gray-400" />
+        <div className="flex space-x-4">
           <select
             value={filterRole}
             onChange={(e) => setFilterRole(e.target.value)}
@@ -172,11 +200,17 @@ export default function UserList({ users, selectedUserId, onUserSelect }: UserLi
                     <ChevronDown className="w-4 h-4 ml-1" />
                   </div>
                 </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => onUserSelect(user.id)}>
+                <tr key={user.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <input
                       type="checkbox"
@@ -241,6 +275,22 @@ export default function UserList({ users, selectedUserId, onUserSelect }: UserLi
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(user.created_at).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {user.role !== 'admin' && (
+                      <button
+                        onClick={() => handleBlockUser(user.id, user.blocked || false)}
+                        disabled={blockingUser === user.id}
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                          user.blocked
+                            ? 'bg-red-100 text-red-800 hover:bg-red-200'
+                            : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                        }`}
+                      >
+                        <Ban className="w-4 h-4 mr-1" />
+                        {user.blocked ? 'Unblock' : 'Block'}
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

@@ -128,6 +128,7 @@ export default function UserManagement() {
         users={users}
         selectedUserId={selectedUserId}
         onUserSelect={handleUserSelection}
+        onUserUpdate={fetchUsers}
       />
 
       {showEmailDialog && selectedUserObject && selectedUserObject.email && (
