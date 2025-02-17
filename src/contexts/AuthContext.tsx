@@ -54,15 +54,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
 
-      // If user is blocked, sign them out
+      // If user is blocked, sign them out and show message
       if (data?.blocked) {
         await signOut();
-        throw new Error('Your account has been blocked. Please contact support.');
+        throw new Error('Your account has been blocked. Please contact support for assistance.');
       }
 
       setIsAdmin(data?.role === 'admin' || false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error checking user role:', error);
+      if (error.message.includes('blocked')) {
+        throw error; // Re-throw blocked error to show to user
+      }
       setIsAdmin(false);
     } finally {
       setLoading(false);
@@ -70,39 +73,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signIn = async (email: string, password: string) => {
-    // First check if the email is blocked
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('blocked')
-      .eq('email', email)
-      .maybeSingle();
+    try {
+      // First check if the email is blocked
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('blocked')
+        .eq('email', email)
+        .maybeSingle();
 
-    if (profileError) throw profileError;
+      if (profileError) throw profileError;
 
-    if (profile?.blocked) {
-      throw new Error('This account has been blocked. Please contact support.');
+      if (profile?.blocked) {
+        throw new Error('This account has been blocked. Please contact support for assistance.');
+      }
+
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Sign in error:', error);
+      throw error;
     }
-
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
   };
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    // Check if email is blocked
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('blocked')
-      .eq('email', email)
-      .maybeSingle();
-
-    if (profileError) throw profileError;
-
-    if (profile?.blocked) {
-      throw new Error('This email address has been blocked. Please contact support.');
-    }
-
     try {
-      const response = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -111,55 +106,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           },
         },
       });
-      
-      if (response.error) throw response.error;
 
-      // Create user wallet
-      if (response.data.user) {
-        try {
-          const { error: walletError } = await supabase
-            .from('user_wallets')
-            .insert({
-              user_id: response.data.user.id,
-              tokens: 0
-            });
+      if (error) throw error;
+      if (!data.user) throw new Error('No user returned from sign up');
 
-          if (walletError) throw walletError;
-        } catch (walletError: any) {
-          console.error('Error creating user wallet:', walletError);
-          throw new Error('Failed to create user wallet');
-        }
-      }
+      // Wait for the trigger to create the profile
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Update the profile with additional information
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          email,
+          full_name: fullName
+        })
+        .eq('id', data.user.id);
+
+      if (updateError) throw updateError;
+
+      return;
     } catch (error: any) {
       console.error('Error during sign up:', error);
-      throw new Error(error.message || 'Failed to create an account');
+      throw error;
     }
   };
 
   const signOut = async () => {
     try {
-      // First check if we have a valid session
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        // If no session exists, just clear the local state
-        setUser(null);
-        setIsAdmin(false);
-        return;
-      }
-
-      // If we have a valid session, proceed with sign out
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
     } catch (error: any) {
-      // If the error is related to missing session, we can safely ignore it
-      if (error.name === 'AuthSessionMissingError' || error.message?.includes('session_not_found')) {
-        setUser(null);
-        setIsAdmin(false);
-        return;
-      }
-      // For other errors, we should still throw them
-      throw error;
+      console.error('Error signing out:', error);
+    } finally {
+      setUser(null);
+      setIsAdmin(false);
     }
   };
 

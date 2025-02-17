@@ -82,7 +82,14 @@ export default function ModuleEditor() {
       ...contentItems,
       {
         type,
-        content: '',
+        content: type === 'quiz' ? JSON.stringify({
+          question: '',
+          type: 'single',
+          options: [
+            { text: '', isCorrect: false },
+            { text: '', isCorrect: false }
+          ]
+        }) : '',
         duration: type === 'video' ? 0 : undefined,
         order_index: contentItems.length
       }
@@ -93,6 +100,41 @@ export default function ModuleEditor() {
     const updatedItems = [...contentItems];
     updatedItems[index] = { ...updatedItems[index], ...updates };
     setContentItems(updatedItems);
+  };
+
+  const updateQuizContent = (index: number, quizContent: QuizContent) => {
+    updateContentItem(index, { content: JSON.stringify(quizContent) });
+  };
+
+  const addQuizOption = (index: number, quizContent: QuizContent) => {
+    const newOptions = [...quizContent.options, { text: '', isCorrect: false }];
+    updateQuizContent(index, { ...quizContent, options: newOptions });
+  };
+
+  const updateQuizOption = (
+    index: number,
+    quizContent: QuizContent,
+    optionIndex: number,
+    updates: Partial<{ text: string; isCorrect: boolean }>
+  ) => {
+    const newOptions = [...quizContent.options];
+    newOptions[optionIndex] = { ...newOptions[optionIndex], ...updates };
+    
+    // For single choice, ensure only one option is correct
+    if (quizContent.type === 'single' && updates.isCorrect) {
+      newOptions.forEach((option, idx) => {
+        if (idx !== optionIndex) {
+          option.isCorrect = false;
+        }
+      });
+    }
+    
+    updateQuizContent(index, { ...quizContent, options: newOptions });
+  };
+
+  const removeQuizOption = (index: number, quizContent: QuizContent, optionIndex: number) => {
+    const newOptions = quizContent.options.filter((_, idx) => idx !== optionIndex);
+    updateQuizContent(index, { ...quizContent, options: newOptions });
   };
 
   const removeContentItem = (index: number) => {
@@ -278,6 +320,14 @@ export default function ModuleEditor() {
                   <ImageIcon className="w-4 h-4 mr-2" />
                   Add Image
                 </button>
+                <button
+                  type="button"
+                  onClick={() => addContentItem('quiz')}
+                  className="flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                >
+                  <HelpCircle className="w-4 h-4 mr-2" />
+                  Add Quiz
+                </button>
               </div>
             </div>
 
@@ -328,6 +378,85 @@ export default function ModuleEditor() {
                         className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         placeholder="Enter document content..."
                       />
+                    )}
+
+                    {item.type === 'quiz' && (
+                      <div className="space-y-4">
+                        {(() => {
+                          const quizContent: QuizContent = item.content ? JSON.parse(item.content) : {
+                            question: '',
+                            type: 'single',
+                            options: [
+                              { text: '', isCorrect: false },
+                              { text: '', isCorrect: false }
+                            ]
+                          };
+
+                          return (
+                            <>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700">Question</label>
+                                <input
+                                  type="text"
+                                  value={quizContent.question}
+                                  onChange={(e) => updateQuizContent(index, { ...quizContent, question: e.target.value })}
+                                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                  placeholder="Enter your question..."
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700">Question Type</label>
+                                <select
+                                  value={quizContent.type}
+                                  onChange={(e) => updateQuizContent(index, { ...quizContent, type: e.target.value as 'single' | 'multiple' })}
+                                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                >
+                                  <option value="single">Single Choice</option>
+                                  <option value="multiple">Multiple Choice</option>
+                                </select>
+                              </div>
+
+                              <div className="space-y-2">
+                                <label className="block text-sm font-medium text-gray-700">Options</label>
+                                {quizContent.options.map((option, optionIndex) => (
+                                  <div key={optionIndex} className="flex items-center space-x-2">
+                                    <input
+                                      type={quizContent.type === 'single' ? 'radio' : 'checkbox'}
+                                      checked={option.isCorrect}
+                                      onChange={(e) => updateQuizOption(index, quizContent, optionIndex, { isCorrect: e.target.checked })}
+                                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    />
+                                    <input
+                                      type="text"
+                                      value={option.text}
+                                      onChange={(e) => updateQuizOption(index, quizContent, optionIndex, { text: e.target.value })}
+                                      className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                      placeholder={`Option ${optionIndex + 1}`}
+                                    />
+                                    {quizContent.options.length > 2 && (
+                                      <button
+                                        type="button"
+                                        onClick={() => removeQuizOption(index, quizContent, optionIndex)}
+                                        className="p-1 text-red-600 hover:bg-red-50 rounded"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
+                                <button
+                                  type="button"
+                                  onClick={() => addQuizOption(index, quizContent)}
+                                  className="mt-2 text-sm text-blue-600 hover:text-blue-700"
+                                >
+                                  Add Option
+                                </button>
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
                     )}
                   </div>
                   <button
