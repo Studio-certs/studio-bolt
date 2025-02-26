@@ -8,6 +8,8 @@ interface Badge {
   name: string;
   description: string;
   image_url: string;
+  nft_contract_address: string;
+  admin_wallet_id: string;
   created_at: string;
 }
 
@@ -22,6 +24,8 @@ export default function BadgeManagement() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [nftContractAddress, setNftContractAddress] = useState('');
+  const [adminWalletId, setAdminWalletId] = useState('');
   const [editingBadge, setEditingBadge] = useState<Badge | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAssignModal, setShowAssignModal] = useState(false);
@@ -75,10 +79,17 @@ export default function BadgeManagement() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     
+    if (!nftContractAddress || !adminWalletId) {
+      alert('NFT Contract Address and Admin Wallet ID are required');
+      return;
+    }
+
     const badgeData = {
       name,
       description,
-      image_url: imageUrl
+      image_url: imageUrl,
+      nft_contract_address: nftContractAddress,
+      admin_wallet_id: adminWalletId
     };
 
     try {
@@ -127,6 +138,8 @@ export default function BadgeManagement() {
     setName(badge.name);
     setDescription(badge.description);
     setImageUrl(badge.image_url);
+    setNftContractAddress(badge.nft_contract_address);
+    setAdminWalletId(badge.admin_wallet_id);
   }
 
   async function toggleBadgeAssignment(userId: string) {
@@ -170,6 +183,8 @@ export default function BadgeManagement() {
     setName('');
     setDescription('');
     setImageUrl('');
+    setNftContractAddress('');
+    setAdminWalletId('');
   }
 
   if (loading) {
@@ -223,6 +238,28 @@ export default function BadgeManagement() {
             />
           </div>
           <div>
+            <label className="block text-sm font-medium text-gray-700">NFT Contract Address</label>
+            <input
+              type="text"
+              value={nftContractAddress}
+              onChange={(e) => setNftContractAddress(e.target.value)}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              required
+              placeholder="0x..."
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Admin Wallet ID</label>
+            <input
+              type="text"
+              value={adminWalletId}
+              onChange={(e) => setAdminWalletId(e.target.value)}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              required
+              placeholder="0x..."
+            />
+          </div>
+          <div>
             <label className="block text-sm font-medium text-gray-700">Badge Image</label>
             <div className="mt-1 flex items-center space-x-4">
               <ImageUpload onUploadComplete={(url) => setImageUrl(url)} />
@@ -263,6 +300,9 @@ export default function BadgeManagement() {
                   <div>
                     <h3 className="font-medium">{badge.name}</h3>
                     <p className="text-sm text-gray-500">{badge.description}</p>
+                    <p className="text-xs text-gray-400 mt-1 font-mono">
+                      Contract: {badge.nft_contract_address?.slice(0, 6)}...{badge.nft_contract_address?.slice(-4)}
+                    </p>
                   </div>
                 </div>
               </div>

@@ -1,13 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { 
-  BookOpen, Clock, Award, MapPin, Globe, Linkedin, Github, Twitter, 
-  Edit2, X, Check, Camera, Wallet, PlusCircle, AlertCircle, Briefcase,
-  Mail, Calendar, ChevronRight, Star, BookMarked, GraduationCap, Share2
-} from 'lucide-react';
 import { format } from 'date-fns';
+import { 
+  Clock, ThumbsUp, MessageSquare, X, BookOpen, Users, 
+  GraduationCap, ChevronRight, Award, Calendar, Search,
+  MapPin, Globe, Linkedin, Github, Twitter, Edit2, Check,
+  Camera, Wallet, PlusCircle, AlertCircle, Briefcase,
+  Mail, Share2, BookOpen as BookIcon
+} from 'lucide-react';
 import ImageUpload from '../components/ImageUpload';
 import UserAvatar from '../components/UserAvatar';
 
@@ -23,30 +25,24 @@ interface UserProfile {
   linkedin_url: string;
   github_url: string;
   twitter_url: string;
-  badges?: {
-    badge: {
-      id: string;
-      name: string;
-      description: string;
-      image_url: string;
-    };
-    awarded_at: string;
-  }[];
+  wallet_address: string;
   created_at: string;
 }
 
-interface EnrolledCourse {
-  course: {
+interface Badge {
+  badge: {
     id: string;
-    title: string;
+    name: string;
     description: string;
-    duration: number;
-    level: 'beginner' | 'intermediate' | 'advanced';
-    thumbnail_url: string;
-    category: string;
+    image_url: string;
+    nft_contract_address?: string;
   };
-  progress: number;
-  enrolled_at: string;
+  awarded_at: string;
+}
+
+function truncateAddress(address: string) {
+  if (!address) return '';
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
 export default function Profile() {
@@ -55,12 +51,12 @@ export default function Profile() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
+  const [enrolledCourses, setEnrolledCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState<UserProfile | null>(null);
   const [saving, setSaving] = useState(false);
-  const [badges, setBadges] = useState<any[]>([]);
+  const [badges, setBadges] = useState<Badge[]>([]);
   const [tokens, setTokens] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -168,7 +164,8 @@ export default function Profile() {
             id,
             name,
             description,
-            image_url
+            image_url,
+            nft_contract_address
           )
         `)
         .eq('user_id', user.id);
@@ -493,6 +490,16 @@ export default function Profile() {
                       placeholder="https://twitter.com/username"
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Wallet Address</label>
+                    <input
+                      type="text"
+                      value={editedProfile.wallet_address || ''}
+                      onChange={(e) => setEditedProfile({ ...editedProfile, wallet_address: e.target.value })}
+                      className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      placeholder="0x..."
+                    />
+                  </div>
                 </div>
                 <div className="flex justify-end space-x-4">
                   <button
@@ -532,7 +539,7 @@ export default function Profile() {
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Enrolled Courses</p>
+                <p className="text-sm text-gray-500">Total Courses</p>
                 <p className="text-2xl font-bold text-gray-900">{enrolledCourses.length}</p>
               </div>
               <div className="bg-blue-50 p-3 rounded-lg">
@@ -547,7 +554,7 @@ export default function Profile() {
                 <p className="text-2xl font-bold text-gray-900">{completedCourses}</p>
               </div>
               <div className="bg-green-50 p-3 rounded-lg">
-                <Check className="w-6 h-6 text-green-500" />
+                <GraduationCap className="w-6 h-6 text-green-500" />
               </div>
             </div>
           </div>
@@ -565,18 +572,44 @@ export default function Profile() {
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Total Time</p>
-                <p className="text-2xl font-bold text-gray-900">{totalLearningTime}m</p>
+                <p className="text-sm text-gray-500">Wallet</p>
+                {profile.wallet_address ? (
+                  <div>
+                    <p className="text-sm font-mono text-gray-900">
+                      {truncateAddress(profile.wallet_address)}
+                    </p>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(profile.wallet_address);
+                        setSuccess('Wallet address copied!');
+                        setTimeout(() => setSuccess(null), 2000);
+                      }}
+                      className="text-xs text-blue-600 hover:text-blue-700 mt-1"
+                    >
+                      Copy address
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No wallet connected</p>
+                )}
               </div>
               <div className="bg-purple-50 p-3 rounded-lg">
-                <Clock className="w-6 h-6 text-purple-500" />
+                <Wallet className="w-6 h-6 text-purple-500" />
               </div>
             </div>
           </div>
         </div>
 
+        {/* Bio Section */}
+        {profile.bio && (
+          <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <h2 className="text-xl font-semibold mb-4">About</h2>
+            <p className="text-gray-600 whitespace-pre-wrap">{profile.bio}</p>
+          </div>
+        )}
+
         {/* Tabs */}
-        <div className="bg-white rounded-xl shadow-sm mb-8">
+        <div className="bg-white rounded-xl shadow-sm">
           <div className="border-b border-gray-200">
             <nav className="flex -mb-px">
               <button
@@ -615,20 +648,13 @@ export default function Profile() {
           <div className="p-6">
             {activeTab === 'overview' && (
               <div className="space-y-8">
-                {profile.bio && (
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">About</h3>
-                    <p className="text-gray-600 whitespace-pre-wrap">{profile.bio}</p>
-                  </div>
-                )}
-
                 <div>
                   <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
                   <div className="space-y-4">
                     {enrolledCourses.slice(0, 3).map(({ course, progress, enrolled_at }) => (
                       <div key={course.id} className="flex items-center space-x-4">
                         <div className="bg-blue-50 p-2 rounded-lg">
-                          <BookMarked className="w-6 h-6 text-blue-500" />
+                          <BookIcon className="w-6 h-6 text-blue-500" />
                         </div>
                         <div className="flex-1">
                           <p className="font-medium">{course.title}</p>
@@ -672,10 +698,10 @@ export default function Profile() {
                         </span>
                       </div>
                       <h3 className="font-semibold mb-2">{course.title}</h3>
-                      <p className="text-sm text-gray-500 mb-4">
+                      <p className="text-sm text-gray-500">
                         Enrolled on {format(new Date(enrolled_at), 'PP')}
                       </p>
-                      <div className="space-y-2">
+                      <div className="space-y-2 mt-4">
                         <div className="flex items-center justify-between text-sm text-gray-500">
                           <div className="flex items-center">
                             <Clock className="w-4 h-4 mr-1" />
@@ -719,6 +745,11 @@ export default function Profile() {
                     </div>
                     <h4 className="font-semibold mb-1">{badge.name}</h4>
                     <p className="text-sm text-gray-500 mb-2">{badge.description}</p>
+                    {badge.nft_contract_address && (
+                      <p className="text-xs text-gray-400 font-mono">
+                        NFT: {badge.nft_contract_address.slice(0, 6)}...{badge.nft_contract_address.slice(-4)}
+                      </p>
+                    )}
                     <p className="text-xs text-gray-400">
                       Awarded on {format(new Date(awarded_at), 'PP')}
                     </p>
