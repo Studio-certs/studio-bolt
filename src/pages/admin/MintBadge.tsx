@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { web3, adminPrivateKey, isValidAddress, getAdminAddress } from '../../lib/web3';
+import { web3, adminPrivateKey, isValidAddress } from '../../lib/web3';
 import { Award, Search, Users, X, Check, Loader2, Wallet, AlertCircle, Info } from 'lucide-react';
 import UserAvatar from '../../components/UserAvatar';
 
@@ -14,6 +14,7 @@ interface Badge {
 }
 
 interface User {
+  id: string;
   id: string;
   full_name: string;
   avatar_url: string;
@@ -76,15 +77,13 @@ export default function MintBadge() {
 
   useEffect(() => {
     fetchBadges();
-    // Get admin address from private key
-    try {
-      const address = getAdminAddress();
-      setAdminAddress(address);
-    } catch (error) {
-      console.error('Error getting admin address:', error);
-      setError('Failed to get admin wallet address');
-    }
   }, []);
+
+  useEffect(() => {
+    if (selectedBadge) {
+      setAdminAddress(selectedBadge.admin_wallet_id);
+    }
+  }, [selectedBadge]);
 
   async function fetchBadges() {
     try {
@@ -111,6 +110,11 @@ export default function MintBadge() {
         return;
       }
 
+      if (!selectedBadge?.admin_wallet_id) {
+        setError('Selected badge does not have an admin wallet address');
+        return;
+      }
+
       const { data: usersData, error: usersError } = await supabase
         .from('profiles')
         .select('id, full_name, avatar_url, headline, wallet_address')
@@ -119,9 +123,11 @@ export default function MintBadge() {
 
       if (usersError) throw usersError;
       
-      // Filter out users with invalid wallet addresses
+      // Filter out users with invalid wallet addresses and admin wallet address
       const validUsers = usersData?.filter(user => 
-        user.wallet_address && isValidAddress(user.wallet_address)
+        user.wallet_address && 
+        isValidAddress(user.wallet_address) &&
+        user.wallet_address.toLowerCase() !== selectedBadge.admin_wallet_id.toLowerCase()
       ) || [];
       
       setUsers(validUsers);
@@ -171,11 +177,8 @@ export default function MintBadge() {
         web3.utils.sha3(timestamp.toString() + userIdHash.slice(2, 10)) || '0x1'
       );
 
-      // Get admin account from private key
-      const adminAccount = web3.eth.accounts.privateKeyToAccount(adminPrivateKey);
-      
       // Create the mint transaction
-      const mintTx = contract.methods.mint(user.wallet_address, tokenId);
+      const mintTx = contract.methods.mint(adminAddress, tokenId);
       
       // Get current gas price with a small buffer
       const gasPrice = await web3.eth.getGasPrice();
@@ -184,7 +187,7 @@ export default function MintBadge() {
       // Estimate gas for the transaction
       let gas;
       try {
-        gas = await mintTx.estimateGas({ from: adminAccount.address });
+        gas = await mintTx.estimateGas({ from: adminAddress});
       } catch (error) {
         console.error('Gas estimation error:', error);
         gas = 200000; // Fallback gas limit
@@ -197,7 +200,7 @@ export default function MintBadge() {
           data: mintTx.encodeABI(),
           gas,
           gasPrice: gasPriceWithBuffer.toString(),
-          nonce: await web3.eth.getTransactionCount(adminAccount.address),
+          nonce: await web3.eth.getTransactionCount(adminAddress),
         },
         adminPrivateKey
       );
