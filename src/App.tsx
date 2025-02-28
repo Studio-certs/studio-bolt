@@ -19,6 +19,7 @@ import ModuleEditor from './pages/admin/ModuleEditor';
 import CourseDetailsAdmin from './pages/admin/crm/CourseDetails';
 import UpdatePassword from './pages/UpdatePassword';
 import BuyTokens from './pages/BuyTokens';
+import MintBadge from './pages/admin/MintBadge';
 
 export default function App() {
   return (
@@ -75,6 +76,11 @@ export default function App() {
               <Route path="/admin/courses/:id/details" element={
                 <ProtectedRoute adminOnly>
                   <CourseDetailsAdmin />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/mint-badge" element={
+                <ProtectedRoute adminOnly>
+                  <MintBadge />
                 </ProtectedRoute>
               } />
             </Routes>

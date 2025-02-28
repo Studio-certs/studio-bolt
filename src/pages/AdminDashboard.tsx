@@ -3,7 +3,7 @@ import { Link, Routes, Route } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   FileText, Users, Calendar, BookOpen, LayoutGrid, Award,
-  ChevronRight, TrendingUp, DollarSign, Star, UserCheck
+  ChevronRight, TrendingUp, DollarSign, Star, UserCheck, Zap
 } from 'lucide-react';
 import DashboardHome from './admin/DashboardHome';
 import NewsManagement from './admin/NewsManagement';
@@ -11,6 +11,7 @@ import MeetupManagement from './admin/MeetupManagement';
 import CourseManagement from './admin/CourseManagement';
 import CRMManagement from './admin/CRMManagement';
 import BadgeManagement from './admin/BadgeManagement';
+import MintBadge from './admin/MintBadge';
 
 const menuItems = [
   { path: '/admin', icon: LayoutGrid, label: 'Dashboard' },
@@ -19,6 +20,7 @@ const menuItems = [
   { path: '/admin/meetups', icon: Calendar, label: 'Meetups' },
   { path: '/admin/courses', icon: BookOpen, label: 'Courses' },
   { path: '/admin/badges', icon: Award, label: 'Badges' },
+  { path: '/admin/mint-badge', icon: Zap, label: 'Mint Badge' },
 ];
 
 export default function AdminDashboard() {
@@ -121,6 +123,7 @@ export default function AdminDashboard() {
               <Route path="meetups" element={<MeetupManagement />} />
               <Route path="courses" element={<CourseManagement />} />
               <Route path="badges" element={<BadgeManagement />} />
+              <Route path="mint-badge" element={<MintBadge />} />
             </Routes>
           </div>
         </main>
