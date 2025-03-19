@@ -8,7 +8,7 @@ import {
   GraduationCap, ChevronRight, Award, Calendar, Search,
   MapPin, Globe, Linkedin, Github, Twitter, Edit2, Check,
   Camera, Wallet, PlusCircle, AlertCircle, Briefcase,
-  Mail, Share2, BookOpen as BookIcon
+  Mail, Share2, BookIcon, Coins
 } from 'lucide-react';
 import ImageUpload from '../components/ImageUpload';
 import UserAvatar from '../components/UserAvatar';
@@ -40,6 +40,17 @@ interface Badge {
   awarded_at: string;
 }
 
+interface TokenBalance {
+  tokens: number;
+  token_type: {
+    id: string;
+    name: string;
+    description: string;
+    image_url: string | null;
+    conversion_rate: number;
+  };
+}
+
 function truncateAddress(address: string) {
   if (!address) return '';
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -57,7 +68,7 @@ export default function Profile() {
   const [editedProfile, setEditedProfile] = useState<UserProfile | null>(null);
   const [saving, setSaving] = useState(false);
   const [badges, setBadges] = useState<Badge[]>([]);
-  const [tokens, setTokens] = useState<number>(0);
+  const [tokenBalances, setTokenBalances] = useState<TokenBalance[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'courses' | 'badges'>('overview');
@@ -176,17 +187,25 @@ export default function Profile() {
         setBadges(badgesData || []);
       }
 
-      // Fetch tokens
+      // Fetch token balances with token type information
       const { data: walletData, error: walletError } = await supabase
         .from('user_wallets')
-        .select('tokens')
-        .eq('user_id', user.id)
-        .maybeSingle();
+        .select(`
+          tokens,
+          token_type:token_type_id (
+            id,
+            name,
+            description,
+            image_url,
+            conversion_rate
+          )
+        `)
+        .eq('user_id', user.id);
 
       if (walletError) {
         console.error('Error fetching tokens:', walletError);
       } else {
-        setTokens(walletData?.tokens || 0);
+        setTokenBalances(walletData || []);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -345,9 +364,23 @@ export default function Profile() {
               <div className="mt-6 md:mt-0">
                 <div className="flex items-center space-x-4">
                   <div className="bg-blue-50 px-4 py-2 rounded-lg">
-                    <div className="flex items-center">
-                      <Wallet className="w-5 h-5 text-blue-500 mr-2" />
-                      <span className="text-lg font-semibold text-blue-700">{tokens} tokens</span>
+                    <div className="flex flex-col space-y-2">
+                      {tokenBalances.map((balance, index) => (
+                        <div key={index} className="flex items-center">
+                          {balance.token_type.image_url ? (
+                            <img
+                              src={balance.token_type.image_url}
+                              alt={balance.token_type.name}
+                              className="w-5 h-5 mr-2"
+                            />
+                          ) : (
+                            <Coins className="w-5 h-5 text-blue-500 mr-2" />
+                          )}
+                          <span className="text-lg font-semibold text-blue-700">
+                            {balance.tokens} {balance.token_type.name}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                   <Link
@@ -539,7 +572,7 @@ export default function Profile() {
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Total Courses</p>
+                <p className="text-sm text-gray-500">Enrolled Courses</p>
                 <p className="text-2xl font-bold text-gray-900">{enrolledCourses.length}</p>
               </div>
               <div className="bg-blue-50 p-3 rounded-lg">
