@@ -39,11 +39,11 @@ Deno.serve(async (req) => {
 
     // Get and validate the request body
     const body = await req.json();
-    const { amount, user_id } = body;
+    const { amount, user_id, token_type_id } = body;
 
     // Validate required parameters
-    if (!amount || !user_id) {
-      throw new Error('Missing required parameters: amount and user_id are required');
+    if (!amount || !user_id || !token_type_id) {
+      throw new Error('Missing required parameters: amount, user_id, and token_type_id are required');
     }
 
     // Verify the authenticated user matches the requested user_id
@@ -62,6 +62,20 @@ Deno.serve(async (req) => {
       throw new Error('Stripe key not configured');
     }
 
+    // Get token type details
+    const { data: tokenType, error: tokenTypeError } = await supabaseClient
+      .from('token_types')
+      .select('name, conversion_rate')
+      .eq('id', token_type_id)
+      .single();
+
+    if (tokenTypeError || !tokenType) {
+      throw new Error('Invalid token type');
+    }
+
+    // Calculate USD amount based on conversion rate
+    const usdAmount = Math.round(amount / tokenType.conversion_rate);
+
     // Initialize Stripe
     const stripe = new Stripe(stripeKey, {
       apiVersion: '2023-10-16',
@@ -76,12 +90,12 @@ Deno.serve(async (req) => {
           price_data: {
             currency: 'aud',
             product_data: {
-              name: 'Tokens',
-              description: `${amount} tokens for your account`,
+              name: tokenType.name,
+              description: `${amount} ${tokenType.name}`,
             },
             unit_amount: 100, // $1 per token
           },
-          quantity: amount,
+          quantity: usdAmount,
         },
       ],
       mode: 'payment',
@@ -90,6 +104,7 @@ Deno.serve(async (req) => {
       metadata: {
         user_id,
         tokens: amount.toString(),
+        token_type_id
       },
     });
 

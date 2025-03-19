@@ -78,8 +78,13 @@ Deno.serve(async (req) => {
       throw new Error('Invalid user');
     }
 
-    // Get the number of tokens from metadata
+    // Get the number of tokens and token type from metadata
     const tokens = parseInt(session.metadata.tokens, 10);
+    const tokenTypeId = session.metadata.token_type_id;
+
+    if (!tokenTypeId) {
+      throw new Error('Token type not specified');
+    }
 
     // Calculate the total amount paid
     const amountPaid = session.amount_total ? session.amount_total / 100 : tokens; // Convert from cents to dollars
@@ -90,7 +95,8 @@ Deno.serve(async (req) => {
         p_user_id: user_id,
         p_amount: amountPaid,
         p_tokens: tokens,
-        p_stripe_checkout_id: session_id
+        p_stripe_checkout_id: session_id,
+        p_token_type_id: tokenTypeId
       });
 
       if (rpcError) {

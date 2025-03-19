@@ -1,16 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Wallet, AlertCircle, Shield, CreditCard, Zap, CheckCircle2, Gift } from 'lucide-react';
+import { Wallet, AlertCircle, Shield, CreditCard, Zap, CheckCircle2, Gift, Coins } from 'lucide-react';
 
-const tokenPackages = [
-  { amount: 10, label: 'Starter', description: 'Perfect for trying out our platform', icon: Zap },
-  { amount: 50, label: 'Basic', description: 'Most popular for beginners', icon: Shield, featured: true },
-  { amount: 100, label: 'Pro', description: 'Great value for active learners', icon: Gift },
-  { amount: 150, label: 'Elite', description: 'Ideal for dedicated students', icon: CreditCard },
-  { amount: 200, label: 'Premium', description: 'Best value for serious learners', icon: CheckCircle2 },
-  { amount: 250, label: 'Ultimate', description: 'Maximum learning potential', icon: Wallet }
-];
+interface TokenType {
+  id: string;
+  name: string;
+  description: string;
+  image_url: string | null;
+  conversion_rate: number;
+}
+
+interface TokenPackage {
+  amount: number;
+  label: string;
+  description: string;
+  icon: any;
+  featured?: boolean;
+}
 
 const features = [
   {
@@ -31,14 +38,50 @@ const features = [
 ];
 
 export default function BuyTokens() {
-  const [amount, setAmount] = useState(50); // Default to the featured package
+  const [amount, setAmount] = useState(50);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [tokenTypes, setTokenTypes] = useState<TokenType[]>([]);
+  const [selectedTokenType, setSelectedTokenType] = useState<TokenType | null>(null);
   const { user, supabase } = useAuth();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    fetchTokenTypes();
+  }, []);
+
+  const fetchTokenTypes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('token_types')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      setTokenTypes(data || []);
+      if (data && data.length > 0) {
+        setSelectedTokenType(data[0]);
+      }
+    } catch (error: any) {
+      console.error('Error fetching token types:', error);
+      setError('Failed to load token types');
+    }
+  };
+
+  const getTokenPackages = (conversionRate: number): TokenPackage[] => [
+    { amount: 10, label: 'Starter', description: 'Perfect for trying out our platform', icon: Zap },
+    { amount: 50, label: 'Basic', description: 'Most popular for beginners', icon: Shield, featured: true },
+    { amount: 100, label: 'Pro', description: 'Great value for active learners', icon: Gift },
+    { amount: 150, label: 'Elite', description: 'Ideal for dedicated students', icon: CreditCard },
+    { amount: 200, label: 'Premium', description: 'Best value for serious learners', icon: CheckCircle2 },
+    { amount: 250, label: 'Ultimate', description: 'Maximum learning potential', icon: Wallet }
+  ].map(pkg => ({
+    ...pkg,
+    amount: Math.round(pkg.amount * conversionRate)
+  }));
+
   const handlePurchase = async () => {
-    if (!user) return;
+    if (!user || !selectedTokenType) return;
 
     try {
       setLoading(true);
@@ -58,6 +101,7 @@ export default function BuyTokens() {
         body: JSON.stringify({
           amount,
           user_id: user.id,
+          token_type_id: selectedTokenType.id
         }),
       });
 
@@ -96,6 +140,8 @@ export default function BuyTokens() {
     );
   }
 
+  const tokenPackages = selectedTokenType ? getTokenPackages(selectedTokenType.conversion_rate) : [];
+
   return (
     <div className="min-h-[80vh] bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -117,6 +163,37 @@ export default function BuyTokens() {
             </div>
           </div>
         )}
+
+        {/* Token Type Selection */}
+        <div className="max-w-md mx-auto mb-8">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Select Token Type
+          </label>
+          <div className="relative">
+            <select
+              value={selectedTokenType?.id || ''}
+              onChange={(e) => {
+                const selected = tokenTypes.find(tt => tt.id === e.target.value);
+                setSelectedTokenType(selected || null);
+                // Reset amount to the default when changing token type
+                if (selected) {
+                  setAmount(Math.round(50 * selected.conversion_rate));
+                }
+              }}
+              className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+            >
+              {tokenTypes.map((tokenType) => (
+                <option key={tokenType.id} value={tokenType.id}>
+                  {tokenType.name} (1 AUD = {tokenType.conversion_rate} tokens)
+                </option>
+              ))}
+            </select>
+            <Coins className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+          </div>
+          {selectedTokenType?.description && (
+            <p className="mt-2 text-sm text-gray-500">{selectedTokenType.description}</p>
+          )}
+        </div>
 
         {/* Token Packages Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
@@ -143,7 +220,7 @@ export default function BuyTokens() {
                 </div>
                 <div className="mt-4">
                   <p className="text-3xl font-bold text-gray-900">{pkg.amount} <span className="text-lg font-normal text-gray-500">tokens</span></p>
-                  <p className="text-gray-500">${pkg.amount} AUD</p>
+                  <p className="text-gray-500">${pkg.amount / (selectedTokenType?.conversion_rate || 1)} AUD</p>
                 </div>
               </div>
             </div>
@@ -169,7 +246,7 @@ export default function BuyTokens() {
         <div className="max-w-md mx-auto text-center">
           <button
             onClick={handlePurchase}
-            disabled={loading}
+            disabled={loading || !selectedTokenType}
             className="w-full flex items-center justify-center py-3 px-8 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
           >
             {loading ? (
@@ -180,7 +257,7 @@ export default function BuyTokens() {
             ) : (
               <>
                 <CreditCard className="w-5 h-5 mr-2" />
-                Purchase {amount} Tokens for ${amount}
+                Purchase {amount} {selectedTokenType?.name || 'Tokens'} for ${amount / (selectedTokenType?.conversion_rate || 1)} AUD
               </>
             )}
           </button>
