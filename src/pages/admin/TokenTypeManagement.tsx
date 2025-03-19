@@ -198,7 +198,7 @@ export default function TokenTypeManagement() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Conversion Rate (1 USD = X Tokens)
+              Conversion Rate (1 Cleen Token = X Tokens)
             </label>
             <div className="mt-1 relative rounded-md shadow-sm">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -263,7 +263,7 @@ export default function TokenTypeManagement() {
                   <h3 className="font-medium">{tokenType.name}</h3>
                   <p className="text-sm text-gray-500">{tokenType.description}</p>
                   <p className="text-sm text-gray-500">
-                    1 USD = {tokenType.conversion_rate} tokens
+                    1 Cleen Token = {tokenType.conversion_rate} tokens
                   </p>
                 </div>
               </div>

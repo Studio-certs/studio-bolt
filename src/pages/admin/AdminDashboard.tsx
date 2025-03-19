@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, Routes, Route } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { 
   FileText, Users, Calendar, BookOpen, LayoutGrid, Award,
   ChevronRight, TrendingUp, DollarSign, Star, UserCheck, Zap, Coins
@@ -15,7 +15,7 @@ import MintBadge from './MintBadge';
 import TokenTypeManagement from './TokenTypeManagement';
 
 const menuItems = [
-  { path: '/admin', icon: LayoutGrid, label: 'Dashboard', exact: true },
+  { path: '/admin', icon: LayoutGrid, label: 'Dashboard' },
   { path: '/admin/crm', icon: Users, label: 'CRM' },
   { path: '/admin/articles', icon: FileText, label: 'Articles' },
   { path: '/admin/meetups', icon: Calendar, label: 'Meetups' },
