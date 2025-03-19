@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Clock, DollarSign, Wallet } from 'lucide-react';
+import { Clock, DollarSign, Wallet, Coins } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface AdminTransaction {
@@ -12,6 +12,10 @@ interface AdminTransaction {
     full_name: string;
   };
   tokens: number;
+  token_type: {
+    name: string;
+    image_url: string | null;
+  };
   created_at: string;
 }
 
@@ -24,6 +28,11 @@ interface PaymentTransaction {
   status: string;
   stripe_checkout_id: string;
   transaction_time: string;
+  token_type: {
+    name: string;
+    image_url: string | null;
+  };
+  tokens: number;
 }
 
 type TransactionView = 'admin' | 'payment';
@@ -46,7 +55,8 @@ export default function TransactionManagement() {
         .select(`
           *,
           admin:admin_id(full_name),
-          user:user_id(full_name)
+          user:user_id(full_name),
+          token_type:token_type_id(name, image_url)
         `)
         .order('created_at', { ascending: false });
 
@@ -58,7 +68,8 @@ export default function TransactionManagement() {
         .from('payment_transactions')
         .select(`
           *,
-          user:user_id(full_name)
+          user:user_id(full_name),
+          token_type:token_type_id(name, image_url)
         `)
         .order('transaction_time', { ascending: false });
 
@@ -131,7 +142,10 @@ export default function TransactionManagement() {
                     Admin
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tokens
+                    Token Type
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Amount
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Date
@@ -149,6 +163,22 @@ export default function TransactionManagement() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
                         {transaction.admin?.full_name}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        {transaction.token_type?.image_url ? (
+                          <img
+                            src={transaction.token_type.image_url}
+                            alt={transaction.token_type.name}
+                            className="w-6 h-6 rounded-full mr-2"
+                          />
+                        ) : (
+                          <Coins className="w-6 h-6 text-gray-400 mr-2" />
+                        )}
+                        <span className="text-sm text-gray-900">
+                          {transaction.token_type?.name || 'Unknown'}
+                        </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -177,6 +207,9 @@ export default function TransactionManagement() {
                     Amount
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Token Type
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -198,6 +231,22 @@ export default function TransactionManagement() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
                         ${transaction.amount.toFixed(2)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        {transaction.token_type?.image_url ? (
+                          <img
+                            src={transaction.token_type.image_url}
+                            alt={transaction.token_type.name}
+                            className="w-6 h-6 rounded-full mr-2"
+                          />
+                        ) : (
+                          <Coins className="w-6 h-6 text-gray-400 mr-2" />
+                        )}
+                        <span className="text-sm text-gray-900">
+                          {transaction.token_type?.name || 'Unknown'}
+                        </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
