@@ -132,14 +132,19 @@ export default function Profile() {
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       if (profileError) {
         console.error('Error fetching profile:', profileError);
-      } else {
-        setProfile(profileData);
-        setEditedProfile(profileData);
+        throw profileError;
       }
+      
+      if (!profileData) {
+        throw new Error('Profile not found');
+      }
+
+      setProfile(profileData);
+      setEditedProfile(profileData);
 
       // Fetch enrolled courses
       const { data: coursesData, error: coursesError } = await supabase
@@ -209,6 +214,7 @@ export default function Profile() {
       }
     } catch (error) {
       console.error('Error:', error);
+      setError('Failed to load profile data');
     } finally {
       setLoading(false);
     }
@@ -730,7 +736,8 @@ export default function Profile() {
                           {course.level}
                         </span>
                       </div>
-                      <h3 className="font-semibold mb-2">{course.title}</h3>
+                      <h3 className="font-semibold mb-2">{course.title}
+                      </h3>
                       <p className="text-sm text-gray-500">
                         Enrolled on {format(new Date(enrolled_at), 'PP')}
                       </p>
